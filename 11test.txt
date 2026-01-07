@@ -4,3 +4,6 @@ aaasss
 AAAA
 
 sudo chown -R root:root /www/wwwroot/aa.git.gouvgpt.com
+
+
+sss
