@@ -1,5 +1,5 @@
 <!-- 
-  GouvBrain Frontend
+  GouvBrain Frontend - UI/UX Refonte "Slate Pro"
   Vue Salon avec sélection de Personas et Partage RAG
 -->
 <!doctype html>
@@ -9,55 +9,268 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>GouvBrain • Conseil des Ministres IA</title>
   
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
   <!-- Bootstrap & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
 
   <style>
     :root { 
-        --bg-main: #070A12; 
-        --bg-panel: #0E1A2B; 
-        --text-main: #EAF2FF; 
-        --border-color: rgba(255,255,255,0.1); 
+        /* Palette "Slate" pour un look pro et contrasté */
+        --bg-main: #020617;      /* Très sombre (fond général) */
+        --bg-sidebar: #0f172a;   /* Sidebar */
+        --bg-panel: #1e293b;     /* Elements, Cards, Header */
+        --bg-chat: #020617;      /* Fond du chat */
+        --bg-bubble-bot: #1e293b;
+        --bg-bubble-me: #2563eb; 
+        
+        --text-main: #f8fafc;    /* Blanc cassé (lecture principale) */
+        --text-secondary: #cbd5e1; /* Gris clair */
+        --text-muted: #64748b;   /* Gris foncé (infos secondaires) */
+        
+        --border-color: #334155; /* Bordures subtiles */
+        --primary: #3b82f6;      /* Bleu action */
+        --primary-hover: #2563eb;
+        
+        --radius-lg: 16px;
+        --radius-md: 12px;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
     
     body { 
         background-color: var(--bg-main); 
         color: var(--text-main); 
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
         height: 100vh; 
         overflow: hidden; 
         display: flex;
         flex-direction: column;
+        line-height: 1.5;
     }
 
-    /* Modale Style */
+    /* Scrollbar custom */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* --- Modale --- */
     .modal-content { 
         background-color: var(--bg-panel); 
         border: 1px solid var(--border-color); 
-        color: white; 
+        color: var(--text-main);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
     }
-    .form-check-input:checked { background-color: #3b82f6; border-color: #3b82f6; }
+    .modal-header { border-bottom: 1px solid var(--border-color); }
+    .modal-footer { border-top: 1px solid var(--border-color); }
+    .form-control, .form-control:focus {
+        background-color: var(--bg-main);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+    }
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+    .form-check-input {
+        background-color: var(--bg-main);
+        border-color: var(--border-color);
+    }
+    .form-check-input:checked { 
+        background-color: var(--primary); 
+        border-color: var(--primary); 
+    }
+    .cursor-pointer { cursor: pointer; }
 
-    /* Layout */
-    .app-container { flex: 1; display: flex; overflow: hidden; opacity: 0.3; pointer-events: none; transition: opacity 0.3s; }
-    .sidebar { width: 320px; background: rgba(255,255,255,0.02); border-right: 1px solid var(--border-color); overflow-y: auto; }
-    .chat-area { flex: 1; display: flex; flex-direction: column; background: radial-gradient(circle at top right, #1e293b 0%, #070A12 40%); }
-    
-    /* Components */
+    /* --- Header --- */
+    header {
+        background-color: var(--bg-panel);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* --- Layout Principal --- */
+    .app-container { 
+        flex: 1; 
+        display: flex; 
+        overflow: hidden; 
+        opacity: 0.3; 
+        pointer-events: none; 
+        transition: opacity 0.3s ease-in-out; 
+    }
+
+    /* --- Sidebar --- */
+    .sidebar { 
+        width: 340px; 
+        background-color: var(--bg-sidebar); 
+        border-right: 1px solid var(--border-color); 
+        overflow-y: auto; 
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* --- Persona Card --- */
     .persona-card { 
-        background: rgba(255,255,255,0.05); 
-        border: 1px solid transparent; 
-        transition: all 0.2s; 
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
     }
-    .persona-card.active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+    .persona-card:hover {
+        transform: translateY(-1px);
+        border-color: var(--text-muted);
+        box-shadow: var(--shadow-md);
+    }
+    .persona-card.active {
+        border-color: var(--primary);
+        background: rgba(59, 130, 246, 0.05);
+    }
     
-    .chat-bubble { max-width: 80%; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
-    .chat-bubble.me { background-color: #2563eb; align-self: flex-end; color: white; margin-left: auto; }
-    .chat-bubble.bot { background-color: #1f2937; border: 1px solid var(--border-color); align-self: flex-start; }
+    /* --- Chat Area --- */
+    .chat-area { 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column; 
+        background-color: var(--bg-chat);
+        /* Subtle lighting effect at top */
+        background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, transparent 45%); 
+    }
+    
+    .chat-wrap {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
 
-    .input-area { background: var(--bg-panel); border-top: 1px solid var(--border-color); padding: 1rem; }
-    .form-control-dark { background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: white; }
-    .form-control-dark:focus { background: rgba(0,0,0,0.5); color: white; border-color: #3b82f6; box-shadow: none; }
+    /* --- Bubbles --- */
+    .chat-bubble { 
+        max-width: 75%; 
+        border-radius: var(--radius-lg); 
+        padding: 1rem 1.25rem; 
+        position: relative;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        box-shadow: var(--shadow-sm);
+        animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Bot Bubble */
+    .chat-bubble.bot { 
+        background-color: var(--bg-bubble-bot); 
+        border: 1px solid var(--border-color); 
+        color: var(--text-secondary);
+        border-top-left-radius: 4px;
+        margin-right: auto;
+    }
+    .chat-bubble.bot .sender-name {
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        display: block;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* User Bubble */
+    .chat-bubble.me { 
+        background-color: var(--bg-bubble-me); 
+        color: white; 
+        margin-left: auto;
+        border-top-right-radius: 4px;
+        border: 1px solid transparent;
+    }
+
+    /* --- Input Area --- */
+    .input-area { 
+        background: var(--bg-panel); 
+        border-top: 1px solid var(--border-color); 
+        padding: 1.5rem; 
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+    }
+    
+    .input-group-custom {
+        background: var(--bg-main);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        transition: border-color 0.2s;
+    }
+    .input-group-custom:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .form-control-chat { 
+        background: transparent; 
+        border: none; 
+        color: var(--text-main); 
+        padding: 0.75rem 1rem;
+        flex: 1;
+        outline: none;
+        font-size: 1rem;
+    }
+    .form-control-chat::placeholder { color: var(--text-muted); }
+
+    .btn-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .btn-icon:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+    .btn-send {
+        background: var(--primary);
+        color: white;
+    }
+    .btn-send:hover { background: var(--primary-hover); transform: scale(1.05); }
+
+    /* Empty State */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--text-muted);
+        text-align: center;
+    }
+    .empty-state i { font-size: 4rem; margin-bottom: 1.5rem; opacity: 0.2; }
+    
+    /* Badges & Status */
+    .badge-doc {
+        background: rgba(59, 130, 246, 0.1);
+        color: #93c5fd;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        font-weight: 500;
+        padding: 0.35em 0.8em;
+    }
+    .typing-indicator span {
+        display: inline-block; width: 6px; height: 6px; background-color: var(--text-muted); border-radius: 50%;
+        animation: typing 1.4s infinite ease-in-out both; margin-right: 3px;
+    }
+    .typing-indicator span:nth-child(1){animation-delay:-0.32s} .typing-indicator span:nth-child(2){animation-delay:-0.16s}
+    @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
   </style>
 </head>
 
@@ -66,26 +279,27 @@
   <!-- MODALE : CRÉATION DE SALON -->
   <div class="modal fade" id="roomModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-      <div class="modal-content shadow-lg">
+      <div class="modal-content shadow-lg p-3">
         <div class="modal-header border-0 pb-0">
-          <h4 class="modal-title fw-bold"><i class="bi bi-grid-fill me-2"></i>Ouverture de Session</h4>
+          <div>
+              <h4 class="modal-title fw-bold">Ouverture de Session</h4>
+              <p class="text-muted small mb-0">Initialisation du Conseil des Ministres IA</p>
+          </div>
         </div>
-        <div class="modal-body">
-          <p class="text-muted mb-4">Configurez le conseil des ministres pour cette session.</p>
-          
+        <div class="modal-body pt-4">
           <div class="mb-4">
-            <label class="form-label text-uppercase small fw-bold text-muted">Objet de la réunion</label>
-            <input type="text" class="form-control form-control-lg bg-dark text-light border-secondary" id="roomNameInput" placeholder="ex: Projet de Loi Finances 2026">
+            <label class="form-label text-uppercase small fw-bold text-secondary mb-2">Objet de la réunion</label>
+            <input type="text" class="form-control form-control-lg" id="roomNameInput" placeholder="ex: Projet de Loi Finances 2026">
           </div>
 
-          <label class="form-label text-uppercase small fw-bold text-muted mb-3">Ministères Convoqués</label>
+          <label class="form-label text-uppercase small fw-bold text-secondary mb-3">Ministères Convoqués</label>
           <div class="row g-3" id="personaSelector">
             <!-- Rempli par JS -->
           </div>
         </div>
         <div class="modal-footer border-0 pt-0">
-          <button type="button" class="btn btn-primary btn-lg w-100 fw-bold" onclick="createRoom()">
-            <i class="bi bi-check2-circle me-2"></i> Ouvrir le Salon
+          <button type="button" class="btn btn-primary btn-lg w-100 fw-bold py-3" onclick="createRoom()">
+            <i class="bi bi-door-open-fill me-2"></i> Ouvrir le Salon
           </button>
         </div>
       </div>
@@ -93,14 +307,18 @@
   </div>
 
   <!-- BARRE SUPÉRIEURE -->
-  <header class="d-flex justify-content-between align-items-center p-3 border-bottom border-secondary bg-dark" style="z-index: 10;">
+  <header class="d-flex justify-content-between align-items-center px-4 py-3" style="z-index: 10;">
       <div class="d-flex align-items-center gap-3">
-          <div class="fw-bold fs-5 text-white" id="roomTitleDisplay">GouvBrain</div>
-          <span class="badge bg-secondary rounded-pill px-3" id="docCountBadge">0 Document(s)</span>
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-lock-fill text-primary fs-4"></i>
+            <div class="fw-bold fs-5 text-white" id="roomTitleDisplay">GouvBrain</div>
+          </div>
+          <div class="vr bg-secondary opacity-25 mx-1"></div>
+          <span class="badge rounded-pill badge-doc" id="docCountBadge">0 Document(s)</span>
       </div>
       <div>
-          <a href="/admin" class="btn btn-sm btn-outline-secondary text-light border-secondary">
-              <i class="bi bi-gear-fill me-1"></i> Config Admin
+          <a href="/admin" class="btn btn-sm btn-outline-secondary border-0 text-muted">
+              <i class="bi bi-sliders me-1"></i> Config Admin
           </a>
       </div>
   </header>
@@ -109,8 +327,8 @@
   <div class="app-container" id="appShell">
     
     <!-- BARRE LATÉRALE (MINISTRES) -->
-    <div class="sidebar p-3">
-        <h6 class="text-muted text-uppercase small fw-bold mb-3">Ministères Présents</h6>
+    <div class="sidebar p-4">
+        <h6 class="text-secondary text-uppercase small fw-bold mb-4 ps-1">Ministères Présents</h6>
         <div id="activePersonasCol">
             <!-- Liste dynamique -->
         </div>
@@ -118,27 +336,34 @@
 
     <!-- ZONE DE CHAT -->
     <div class="chat-area">
-        <div id="chatWrap" class="flex-grow-1 p-4" style="overflow-y:auto; display: flex; flex-direction: column;">
-            <div class="text-center text-muted mt-5 opacity-50">
-                <i class="bi bi-chat-square-quote fs-1"></i>
-                <p class="mt-2">Le salon est ouvert.<br>Posez une question ou déposez un document PDF pour analyse.</p>
+        <div id="chatWrap" class="chat-wrap flex-grow-1" style="overflow-y:auto;">
+            <div class="empty-state">
+                <i class="bi bi-chat-square-quote"></i>
+                <h4 class="fw-normal mb-2 text-white">Le salon est ouvert</h4>
+                <p class="small">Posez une question au cabinet ou déposez un document PDF pour lancer l'analyse.</p>
             </div>
         </div>
 
         <!-- ZONE DE SAISIE -->
         <div class="input-area">
-            <!-- Zone Upload RAG -->
-            <div class="d-flex align-items-center gap-2 mb-2">
-                <input type="file" id="ragInput" class="d-none" accept=".pdf,.txt,.docx" onchange="uploadRag()">
-                <button class="btn btn-outline-secondary btn-sm border-secondary text-muted" onclick="document.getElementById('ragInput').click()">
-                    <i class="bi bi-paperclip me-1"></i> Ajouter RAG
-                </button>
-                <div id="uploadStatus" class="small text-muted"></div>
-            </div>
+            <!-- Zone Upload Status -->
+            <div id="uploadStatus" class="small text-muted mb-2 ps-1" style="min-height: 20px;"></div>
 
-            <div class="d-flex gap-2">
-                <input type="text" id="chatInput" class="form-control form-control-dark form-control-lg" placeholder="Posez une question au cabinet...">
-                <button class="btn btn-primary btn-lg px-4" onclick="sendMessage()">
+            <!-- Input Group -->
+            <div class="input-group-custom">
+                <!-- Bouton Upload -->
+                <input type="file" id="ragInput" class="d-none" accept=".pdf,.txt,.docx" onchange="uploadRag()">
+                <button class="btn-icon" onclick="document.getElementById('ragInput').click()" title="Ajouter un document (RAG)">
+                    <i class="bi bi-paperclip fs-5"></i>
+                </button>
+                
+                <div class="vr bg-secondary opacity-25 mx-1" style="height: 24px;"></div>
+
+                <!-- Champ Texte -->
+                <input type="text" id="chatInput" class="form-control-chat" placeholder="Posez une question au cabinet...">
+                
+                <!-- Bouton Envoyer -->
+                <button class="btn-icon btn-send" onclick="sendMessage()">
                     <i class="bi bi-send-fill"></i>
                 </button>
             </div>
@@ -164,13 +389,13 @@
             const selector = document.getElementById('personaSelector');
             selector.innerHTML = allPersonas.map(p => `
                 <div class="col-md-6">
-                    <div class="form-check p-3 border border-secondary rounded bg-dark h-100">
-                        <input class="form-check-input fs-5 mt-2" type="checkbox" value="${p.id}" id="chk_${p.id}" checked>
-                        <label class="form-check-label d-flex align-items-start gap-3 ms-2 cursor-pointer" for="chk_${p.id}">
-                            <span class="fs-2">${p.avatarEmoji}</span>
+                    <div class="form-check p-3 border border-secondary rounded bg-dark h-100 cursor-pointer position-relative">
+                        <input class="form-check-input fs-5 position-absolute top-0 end-0 m-3" type="checkbox" value="${p.id}" id="chk_${p.id}" checked>
+                        <label class="form-check-label d-flex align-items-center gap-3 w-100 h-100 cursor-pointer" for="chk_${p.id}">
+                            <div class="fs-2 p-2 bg-secondary bg-opacity-10 rounded-3">${p.avatarEmoji}</div>
                             <div>
                                 <div class="fw-bold text-light">${p.ministry}</div>
-                                <div class="small text-muted">${p.name}</div>
+                                <div class="small text-muted text-truncate" style="max-width: 180px;">${p.name}</div>
                             </div>
                         </label>
                     </div>
@@ -192,7 +417,7 @@
         
         const btn = document.querySelector('.modal-footer button');
         btn.disabled = true;
-        btn.innerHTML = "Création...";
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Création...';
 
         try {
             const res = await fetch('/api/rooms', {
@@ -207,7 +432,7 @@
                 activePersonas = allPersonas.filter(p => data.room.activePersonas.includes(p.id));
                 
                 // UI Unlock
-                document.getElementById('roomTitleDisplay').innerHTML = `<i class="bi bi-circle-fill text-success small me-2"></i> ${data.room.name}`;
+                document.getElementById('roomTitleDisplay').innerHTML = `${data.room.name}`;
                 document.querySelector('.modal.show').classList.remove('show');
                 document.querySelector('.modal-backdrop').remove();
                 document.getElementById('roomModal').style.display = 'none';
@@ -220,21 +445,21 @@
             }
         } catch (e) {
             alert("Erreur création salon");
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-door-open-fill me-2"></i> Ouvrir le Salon';
         }
     }
 
     function renderSidebar() {
         const container = document.getElementById('activePersonasCol');
         container.innerHTML = activePersonas.map(p => `
-            <div class="card mb-2 bg-dark border-secondary text-light persona-card">
-                <div class="card-body p-2 d-flex align-items-center gap-2">
-                    <div class="fs-4">${p.avatarEmoji}</div>
-                    <div class="overflow-hidden">
-                        <div class="fw-bold text-truncate" style="font-size:0.9rem">${p.ministry}</div>
-                        <div class="text-muted small text-truncate">${p.role}</div>
-                    </div>
-                    <div class="ms-auto spinner-border spinner-border-sm text-primary d-none" id="loader_${p.id}"></div>
+            <div class="persona-card p-3 d-flex align-items-center gap-3">
+                <div class="fs-4">${p.avatarEmoji}</div>
+                <div class="overflow-hidden flex-grow-1">
+                    <div class="fw-bold text-truncate text-light" style="font-size:0.95rem">${p.ministry}</div>
+                    <div class="text-muted small text-truncate" style="font-size:0.8rem">${p.role}</div>
                 </div>
+                <div class="ms-auto spinner-grow text-primary d-none" style="width: 8px; height: 8px;" id="loader_${p.id}"></div>
             </div>
         `).join('');
     }
@@ -246,7 +471,7 @@
         if(!file) return;
 
         const statusDiv = document.getElementById('uploadStatus');
-        statusDiv.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Envoi de ${file.name} vers MinIO...`;
+        statusDiv.innerHTML = `<span class="spinner-border spinner-border-sm text-primary me-2"></span> <span class="text-light">Envoi de ${file.name} vers MinIO...</span>`;
 
         const fd = new FormData();
         fd.append('file', file);
@@ -256,18 +481,16 @@
             const data = await res.json();
             
             if(data.ok) {
-                statusDiv.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> ${file.name} stocké & partagé.</span>`;
+                statusDiv.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-2"></i> ${file.name} sécurisé & indexé.</span>`;
+                setTimeout(() => { statusDiv.innerHTML = ''; }, 4000);
+                
                 docCount++;
                 document.getElementById('docCountBadge').innerText = `${docCount} Document(s)`;
                 
                 // Message système dans le chat
-                addChatLine({
-                    name: "Système",
-                    text: `📂 Document versé au dossier : <strong>${file.name}</strong>.\nAccessible par : ${activePersonas.map(p=>p.ministry).join(', ')}.`,
-                    color: "#6c757d"
-                }, false);
+                addSystemMessage(`📂 <strong>Document versé au dossier :</strong> ${file.name}<br><span class="opacity-75 small">Accessible par : ${activePersonas.map(p=>p.ministry).join(', ')}.</span>`);
             } else {
-                statusDiv.innerHTML = `<span class="text-danger">Erreur: ${data.error}</span>`;
+                statusDiv.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> Erreur: ${data.error}</span>`;
             }
         } catch(e) {
             statusDiv.innerHTML = `<span class="text-danger">Erreur réseau</span>`;
@@ -281,24 +504,27 @@
         const text = input.value.trim();
         if(!text) return;
 
+        // Clear empty state if exists
+        const emptyState = document.querySelector('.empty-state');
+        if(emptyState) emptyState.remove();
+
         input.value = "";
         
         // Afficher mon message
         addChatLine({ name: "Moi", text: text }, true);
 
         // Envoyer la requête à tous les ministres présents
-        // (Dans un vrai cas, on pourrait choisir de ne parler qu'à un seul)
         activePersonas.forEach(p => askPersona(p, text));
     }
 
     async function askPersona(persona, question) {
         // UI: Loader actif
         const loader = document.getElementById(`loader_${persona.id}`);
-        if(loader) loader.classList.remove('d-none');
-
-        // Création d'un placeholder de réponse
-        const msgId = `msg_${persona.id}_${Date.now()}`;
+        const card = loader.closest('.persona-card');
         
+        if(loader) loader.classList.remove('d-none');
+        if(card) card.classList.add('active');
+
         try {
             const res = await fetch('/api/chat/n8n', {
                 method: 'POST',
@@ -315,18 +541,20 @@
             addChatLine({
                 name: `${persona.ministry}`,
                 text: data.response,
-                color: persona.color,
+                color: persona.color, // Fallback color handled in CSS if needed
                 avatar: persona.avatarEmoji
             }, false);
 
         } catch (e) {
             addChatLine({
-                name: "Erreur",
-                text: `Impossible de joindre ${persona.ministry}.`,
-                color: "red"
+                name: "Erreur Système",
+                text: `Impossible de joindre le ministère ${persona.ministry}.`,
+                color: "red",
+                avatar: "⚠️"
             }, false);
         } finally {
             if(loader) loader.classList.add('d-none');
+            if(card) card.classList.remove('active');
         }
     }
 
@@ -336,20 +564,46 @@
         
         if (isMe) {
             div.className = "chat-bubble me";
-            div.innerHTML = `<div>${msgData.text}</div>`;
+            div.innerHTML = `<div>${formatText(msgData.text)}</div>`;
         } else {
-            div.className = "d-flex gap-2 mb-3";
+            div.className = "d-flex gap-3 mb-4";
             div.innerHTML = `
-                <div class="fs-4 flex-shrink-0" style="margin-top:-5px">${msgData.avatar || '🤖'}</div>
-                <div class="chat-bubble bot flex-grow-1" style="border-left: 3px solid ${msgData.color || '#555'}">
-                    <div class="fw-bold small mb-1" style="color: ${msgData.color || '#aaa'}">${msgData.name}</div>
-                    <div style="white-space: pre-wrap;">${msgData.text}</div>
+                <div class="fs-3 flex-shrink-0 pt-1">${msgData.avatar || '🏛️'}</div>
+                <div class="chat-bubble bot flex-grow-1" style="border-left: 3px solid ${msgData.color || '#64748b'}">
+                    <span class="sender-name" style="color: ${msgData.color || '#94a3b8'}">${msgData.name}</span>
+                    <div class="text-content">${formatText(msgData.text)}</div>
                 </div>
             `;
         }
         
         wrap.appendChild(div);
-        wrap.scrollTop = wrap.scrollHeight;
+        wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' });
+    }
+
+    function addSystemMessage(htmlContent) {
+        const wrap = document.getElementById('chatWrap');
+        const div = document.createElement('div');
+        
+        // Remove empty state
+        const emptyState = document.querySelector('.empty-state');
+        if(emptyState) emptyState.remove();
+
+        div.className = "text-center my-4";
+        div.innerHTML = `
+            <div class="d-inline-block px-3 py-2 rounded-pill bg-secondary bg-opacity-10 border border-secondary border-opacity-25 text-secondary small">
+                ${htmlContent}
+            </div>
+        `;
+        wrap.appendChild(div);
+        wrap.scrollTo({ top: wrap.scrollHeight, behavior: 'smooth' });
+    }
+
+    function formatText(text) {
+        if (!text) return "";
+        // Simple formatter: convert newlines to <br>, bold markdown to <b>
+        return text
+            .replace(/\n/g, '<br>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     }
 
     // Event Enter sur input
