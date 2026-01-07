@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>Admin GouvBrain • Configuration n8n</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { background-color: #0B1220; color: #EAF2FF; }
+    .card { background-color: #0E1A2B; border: 1px solid rgba(255,255,255,0.1); }
+    .form-control { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: white; }
+    .form-control:focus { background-color: rgba(255,255,255,0.1); color: white; border-color: #3b82f6; box-shadow: none; }
+    .header-bar { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 2rem; }
+  </style>
+</head>
+<body class="p-4">
+  <div class="container">
+    <div class="header-bar d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="m-0"><i class="bi bi-cpu-fill text-primary"></i> Super-Admin GouvBrain</h2>
+        <div class="text-muted small">Orchestration des Personas & Workflows n8n</div>
+      </div>
+      <a href="/" class="btn btn-outline-light"><i class="bi bi-arrow-left"></i> Retour au Salon</a>
+    </div>
+
+    <div class="alert alert-info border-0 bg-opacity-10 bg-info text-info">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      Chaque ministère correspond à un <strong>sous-workflow n8n</strong>. Configurez ici les Webhooks de production.
+      Les fichiers RAG sont stockés sur MinIO et passés en contexte aux workflows.
+    </div>
+
+    <div id="personasContainer"></div>
+
+    <div class="d-grid gap-2 mt-4 mb-5">
+        <button class="btn btn-success btn-lg fw-bold" onclick="saveConfig()">
+          <i class="bi bi-save me-2"></i> Sauvegarder la Configuration
+        </button>
+    </div>
+  </div>
+
+  <script>
+    let personas = [];
+
+    async function load() {
+      const res = await fetch('/api/admin/personas');
+      const data = await res.json();
+      personas = data.personas || [];
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('personasContainer');
+      container.innerHTML = personas.map((p, idx) => `
+        <div class="card mb-3 shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center" style="border-left: 5px solid ${p.color}; background: rgba(255,255,255,0.02);">
+            <div class="d-flex align-items-center gap-2">
+                <span style="font-size:1.5rem">${p.avatarEmoji}</span>
+                <div>
+                    <h5 class="m-0">${p.ministry}</h5>
+                    <div class="small text-muted">${p.role}</div>
+                </div>
+            </div>
+            <span class="badge bg-dark border border-secondary text-secondary font-monospace">ID: ${p.id}</span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label small text-uppercase text-muted fw-bold">Nom d'affichage</label>
+                <input type="text" class="form-control" value="${p.name}" onchange="update(${idx}, 'name', this.value)">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label small text-uppercase text-info fw-bold"><i class="bi bi-lightning-charge-fill"></i> Webhook n8n (Production)</label>
+                <input type="text" class="form-control font-monospace" placeholder="https://n8n.votredomaine.com/webhook/..." value="${p.n8n_webhook || ''}" onchange="update(${idx}, 'n8n_webhook', this.value)">
+              </div>
+              <div class="col-12">
+                <label class="form-label small text-uppercase text-muted fw-bold">Prompt Système (Contexte)</label>
+                <textarea class="form-control" rows="2" onchange="update(${idx}, 'systemPrompt', this.value)">${p.systemPrompt || p.description || ''}</textarea>
+                <div class="form-text text-muted">Ce prompt est envoyé à n8n pour initialiser le comportement du persona.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function update(idx, field, value) {
+      personas[idx][field] = value;
+    }
+
+    async function saveConfig() {
+      const btn = document.querySelector('button.btn-success');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sauvegarde...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/admin/personas', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ personas })
+        });
+        if(res.ok) alert('✅ Configuration sauvegardée avec succès !');
+        else alert('❌ Erreur lors de la sauvegarde.');
+      } catch (e) {
+          alert('❌ Erreur réseau.');
+      } finally {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>
