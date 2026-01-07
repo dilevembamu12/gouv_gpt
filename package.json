@@ -1,0 +1,46 @@
+{
+  "name": "fintrax-pki-pki",
+  "version": "1.0.0",
+  "description": "FIntraX PKI backend (HSM-backed) with OpenSC/PKCS#11 diagnostics, certificate & signature routes, and EJS views.",
+  "main": "pki.js",
+  "private": true,
+  "scripts": {
+    "start": "node pki.js",
+    "dev": "nodemon pki.js",
+    "pm2": "pm2 start pki.js --name fintrax-pki --time",
+    "pm2:restart": "pm2 restart fintrax-pki",
+    "pm2:stop": "pm2 stop fintrax-pki",
+    "pm2:delete": "pm2 delete fintrax-pki"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "form-data": "^4.0.5",
+    "geoip-lite": "^1.4.10",
+    "graphene-pk11": "^2.0.24",
+    "multer": "^1.4.5-lts.1",
+    "node-fetch": "^3.3.2",
+    "undici": "^5.29.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4",
+    "pm2": "^5.4.2"
+  },
+  "engines": {
+    "node": ">=18.12.0"
+  },
+  "keywords": [
+    "PKI",
+    "HSM",
+    "PKCS11",
+    "OpenSC",
+    "OpenSSL",
+    "SmartCard-HSM",
+    "FinTraX",
+    "EJS",
+    "Express"
+  ],
+  "license": "MIT"
+}

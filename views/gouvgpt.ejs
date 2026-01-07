@@ -1,0 +1,1494 @@
+<%
+/*
+gouvbrain.ejs — AI Cabinet Meeting Dashboard (Gov of Congo)
+✅ NO MOCKS / NO DEMO MODE
+✅ All buttons call real APIs
+✅ Status lights are live (polling health endpoints)
+
+Expected (optional) server-side variables:
+  - user: { name }
+  - cabinetTitle: string
+  - meetingName: string
+  - personas: [{ id, name, role, ministry, focus, color, avatarEmoji }]
+
+Backend endpoints (CURRENT SAFE MODE):
+  ✅ POST /api/gouvbrain/ingest        (multipart/form-data: pdf) -> { docId, title, pages, summary, keyTopics[] }
+  ✅ POST /api/ollama/chat             (json Ollama chat payload) -> { message: { content } } (or proxy-compatible)
+  ✅ GET  /api/health
+  ✅ GET  /api/ollama/health
+  ✅ GET  /api/ollama/tags
+
+Notes:
+  - Multi-persona analysis is performed CLIENT-SIDE (loops over personas calling /api/ollama/chat).
+  - /api/gouvbrain/analyze and /api/gouvbrain/doc/:docId are NOT REQUIRED in this safe version.
+*/
+%>
+
+<%
+  const DEFAULT_PERSONAS = [
+    { id:"pm", name:"Premier Ministre", role:"Chair", ministry:"Primature", focus:"Arbitrage, priorités, exécution", color:"#22c55e", avatarEmoji:"🟢" },
+    { id:"fin", name:"Ministre des Finances", role:"SME", ministry:"Finances", focus:"Budget, fiscalité, soutenabilité", color:"#f59e0b", avatarEmoji:"🟠" },
+    { id:"plan", name:"Plan & Développement", role:"SME", ministry:"Plan", focus:"ROI, investissements, PPP", color:"#a855f7", avatarEmoji:"🟣" },
+    { id:"int", name:"Intérieur", role:"SME", ministry:"Intérieur", focus:"Sécurité intérieure, gouvernance locale", color:"#3b82f6", avatarEmoji:"🔵" },
+    { id:"just", name:"Justice", role:"SME", ministry:"Justice", focus:"Conformité, risques juridiques", color:"#ef4444", avatarEmoji:"🔴" },
+    { id:"def", name:"Défense", role:"SME", ministry:"Défense", focus:"Souveraineté, risques stratégiques", color:"#64748b", avatarEmoji:"⚫" },
+    { id:"health", name:"Santé", role:"SME", ministry:"Santé", focus:"Impact sanitaire, urgence, capacités", color:"#14b8a6", avatarEmoji:"🟦" },
+    { id:"edu", name:"Éducation", role:"SME", ministry:"Éducation", focus:"Compétences, formation, inclusion", color:"#06b6d4", avatarEmoji:"🧊" },
+    { id:"energy", name:"Hydrocarbures & Énergie", role:"SME", ministry:"Énergie", focus:"Énergie, chaîne de valeur, revenus", color:"#fb7185", avatarEmoji:"🌸" },
+    { id:"digital", name:"Économie Numérique", role:"SME", ministry:"Numérique", focus:"Data, IA, cyber, interopérabilité", color:"#10b981", avatarEmoji:"🟩" },
+    { id:"env", name:"Environnement", role:"SME", ministry:"Environnement", focus:"ESG, conformité, climat", color:"#84cc16", avatarEmoji:"🟩" },
+  ];
+
+  const cabinetTitle = typeof locals.cabinetTitle !== "undefined" ? locals.cabinetTitle : "GouvBrain — Conseil des Ministres (République du Congo)";
+  const meetingName  = typeof locals.meetingName  !== "undefined" ? locals.meetingName  : "Session IA • Analyse & Décision";
+  const personas     = (locals.personas && locals.personas.length) ? locals.personas : DEFAULT_PERSONAS;
+  const userName     = (locals.user && locals.user.name) ? locals.user.name : "Secrétariat Général";
+%>
+
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title><%= cabinetTitle %></title>
+
+  <!-- Bootstrap + Icons (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+
+  <style>
+    :root{
+      --bg0:#070A12;
+      --bg1:#0B1220;
+      --card:#0E1A2B;
+      --card2:#0B1525;
+      --txt:#EAF2FF;
+      --muted:#9FB2D0;
+      --line:rgba(255,255,255,.08);
+      --glow: 0 20px 60px rgba(0,0,0,.55);
+      --radius: 22px;
+
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --off:rgba(255,255,255,.18);
+    }
+
+    html,body{
+      height:100%;
+      background:
+        radial-gradient(1200px 600px at 15% 0%, rgba(34,197,94,.18), transparent 55%),
+        radial-gradient(900px 500px at 85% 10%, rgba(59,130,246,.18), transparent 60%),
+        radial-gradient(900px 600px at 50% 90%, rgba(168,85,247,.14), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      color:var(--txt);
+      overscroll-behavior: none;
+    }
+
+    .app-shell{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(14px);
+      background: rgba(7,10,18,.68);
+      border-bottom:1px solid var(--line);
+    }
+
+    .brand-pill{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+      padding:.5rem .9rem;
+      display:flex; align-items:center; gap:.6rem;
+      max-width: min(820px, 100%);
+    }
+
+    .brand-dot{
+      width:10px; height:10px; border-radius:999px;
+      background: linear-gradient(135deg, #22c55e, #3b82f6);
+      box-shadow: 0 0 0 3px rgba(34,197,94,.12), 0 0 22px rgba(59,130,246,.35);
+      flex: 0 0 auto;
+    }
+
+    .status-pills{
+      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    }
+    .sp{
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:.28rem .55rem;
+      background: rgba(255,255,255,.03);
+      font-size:.78rem;
+      color: var(--muted);
+      display:flex; align-items:center; gap:8px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .led{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--off);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+    }
+    .led.ok{ background: var(--ok); box-shadow: 0 0 0 3px rgba(34,197,94,.14), 0 0 18px rgba(34,197,94,.35); }
+    .led.warn{ background: var(--warn); box-shadow: 0 0 0 3px rgba(245,158,11,.16), 0 0 18px rgba(245,158,11,.35); }
+    .led.bad{ background: var(--bad); box-shadow: 0 0 0 3px rgba(239,68,68,.14), 0 0 18px rgba(239,68,68,.35); }
+
+    .main{ flex:1; overflow:hidden; padding: 14px 14px 0 14px; }
+
+    .grid{
+      height:100%;
+      display:grid;
+      grid-template-columns: 360px 1.25fr 420px;
+      gap: 14px;
+      overflow:hidden;
+      min-height: 0;
+    }
+
+    @media (max-width: 1400px){
+      .grid{ grid-template-columns: 320px 1fr 380px; }
+    }
+
+    @media (max-width: 1200px){
+      .main{ padding: 12px 12px 0 12px; }
+      .grid{
+        grid-template-columns: 1fr;
+        grid-auto-rows: minmax(320px, 1fr);
+      }
+      .panel{ min-height: 360px; }
+      .brand-pill{ border-radius: 18px; }
+    }
+
+    @media (max-width: 576px){
+      .main{ padding: 10px 10px 0 10px; }
+      .panel-header{ padding: 10px 10px; }
+      .persona-list, .chat-wrap, .doc-body{ padding: 10px; }
+      .msg .bubble{ max-width: 100%; }
+      .brand-pill{ padding: .5rem .7rem; }
+    }
+
+    .panel{
+      background: rgba(14,26,43,.72);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--glow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      min-height: 0;
+    }
+
+    .panel-header{
+      padding: 12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+      flex-wrap: wrap;
+    }
+
+    .panel-title{
+      display:flex; gap:.65rem; align-items:center;
+      font-weight:700;
+      letter-spacing:.2px;
+      min-width: 0;
+    }
+
+    .chip{
+      font-size:.78rem;
+      color: var(--muted);
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:.25rem .55rem;
+      background: rgba(255,255,255,.03);
+      white-space: nowrap;
+    }
+
+    .persona-list{ padding: 12px; overflow:auto; flex:1; }
+
+    .persona-card{
+      border:1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.015));
+      display:flex;
+      gap:12px;
+      align-items:stretch;
+      cursor:pointer;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .persona-card:hover{
+      transform: translateY(-2px) scale(1.01);
+      border-color: rgba(255,255,255,.16);
+      box-shadow: 0 18px 42px rgba(0,0,0,.45);
+    }
+    .persona-card.active{
+      outline: 2px solid rgba(59,130,246,.45);
+      box-shadow: 0 0 0 6px rgba(59,130,246,.10), 0 22px 60px rgba(0,0,0,.55);
+    }
+    .persona-aura{
+      position:absolute; inset:-60px -60px auto auto;
+      width:180px; height:180px; border-radius: 999px;
+      filter: blur(18px);
+      opacity:.35;
+      pointer-events:none;
+      transform: translate(10px, -10px);
+    }
+
+    .avatar{
+      width:54px; height:54px;
+      border-radius: 18px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      display:flex; align-items:center; justify-content:center;
+      font-size: 1.3rem;
+      flex: 0 0 auto;
+      position:relative;
+    }
+    .avatar::after{
+      content:"";
+      position:absolute; inset:-2px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(34,197,94,.22), rgba(59,130,246,.18), rgba(168,85,247,.16));
+      z-index:-1;
+      filter: blur(10px);
+      opacity:.55;
+    }
+
+    .persona-meta{ flex:1; min-width:0; }
+    .persona-meta h6{ margin:0; font-weight:800; }
+    .persona-meta p{ margin:.25rem 0 0; color:var(--muted); font-size:.88rem; line-height:1.2; }
+    .persona-mini{ display:flex; flex-wrap:wrap; gap:6px; margin-top:.5rem; }
+
+    .chat-wrap{
+      padding: 12px;
+      overflow:auto;
+      flex:1;
+      background:
+        radial-gradient(650px 280px at 30% 0%, rgba(34,197,94,.08), transparent 60%),
+        radial-gradient(650px 280px at 70% 0%, rgba(59,130,246,.08), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.005));
+    }
+
+    .msg{ display:flex; gap:10px; margin-bottom: 10px; align-items:flex-start; }
+    .msg .bubble{
+      max-width: 78%;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      white-space:pre-wrap;
+      word-break: break-word;
+    }
+    .msg.me{ justify-content:flex-end; }
+    .msg.me .bubble{ background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.22); }
+    .msg .who{ font-size:.78rem; color: var(--muted); margin-bottom: 3px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+
+    .composer{
+      padding: 12px;
+      border-top:1px solid var(--line);
+      background: rgba(7,10,18,.45);
+    }
+
+    .composer .form-control{
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--txt);
+      border-radius: 16px;
+    }
+    .composer .form-control:focus{
+      box-shadow: 0 0 0 .25rem rgba(59,130,246,.15);
+      border-color: rgba(59,130,246,.3);
+    }
+
+    .doc-body{ padding: 12px; overflow:auto; flex:1; }
+
+    .kpi{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 576px){
+      .kpi{ grid-template-columns: 1fr; }
+    }
+
+    .kpi .box{
+      border:1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      background: rgba(255,255,255,.02);
+      min-width: 0;
+    }
+    .box .label{ color: var(--muted); font-size:.78rem; }
+    .box .value{ font-weight:800; font-size:1.05rem; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+    .analysis-card{
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      border-radius: 18px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .analysis-card h6{ margin:0 0 6px 0; font-weight:800; }
+    .analysis-card ul{ margin: 0; padding-left: 18px; color: var(--muted); }
+    .analysis-card .stance{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: .25rem .55rem;
+      border:1px solid var(--line);
+      border-radius:999px;
+      font-size:.78rem;
+      color: var(--muted);
+      background: rgba(255,255,255,.02);
+      margin-bottom: 8px;
+    }
+
+    .alert-card{
+      border: 1px solid rgba(245,158,11,.25);
+      background: rgba(245,158,11,.06);
+      border-radius: 18px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .footerbar{
+      position:sticky; bottom:0; z-index:50;
+      border-top:1px solid var(--line);
+      background: rgba(7,10,18,.68);
+      backdrop-filter: blur(14px);
+      padding: 10px 14px;
+    }
+
+    .dropzone{
+      border: 1.5px dashed rgba(255,255,255,.18);
+      border-radius: 18px;
+      background: rgba(255,255,255,.03);
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      transition: border-color .18s ease, background .18s ease, transform .18s ease;
+      flex-wrap: wrap;
+    }
+    .dropzone.dragover{
+      border-color: rgba(34,197,94,.45);
+      background: rgba(34,197,94,.08);
+      transform: translateY(-1px);
+    }
+
+    .tiny{ font-size:.82rem; color: var(--muted); }
+
+    .btn-soft{
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: var(--txt);
+    }
+    .btn-soft:hover{
+      border-color: rgba(255,255,255,.20);
+      background: rgba(255,255,255,.06);
+      color: var(--txt);
+    }
+
+    .progress{
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      overflow:hidden;
+    }
+    .progress-bar{ width:0%; transition: width .18s ease; }
+
+    .blink{ animation: blink 1.1s infinite ease-in-out; }
+    @keyframes blink{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="container-fluid py-2">
+        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+          <div class="d-flex align-items-center gap-2 flex-wrap" style="min-width:0;">
+            <div class="brand-pill" style="min-width:0;">
+              <span class="brand-dot"></span>
+              <div style="min-width:0;">
+                <div class="fw-bold text-truncate" style="line-height:1.05; max-width: 70vw;"><%= cabinetTitle %></div>
+                <div class="tiny"><i class="bi bi-stars"></i> <%= meetingName %> • <span class="blink">LIVE</span></div>
+              </div>
+            </div>
+
+            <div class="status-pills ms-1">
+              <div class="sp" title="API principale">
+                <span class="led" id="ledApi"></span> API
+              </div>
+              <div class="sp" title="Ollama">
+                <span class="led" id="ledOllama"></span> Ollama
+              </div>
+              <div class="sp" title="Aidesk">
+                <span class="led" id="ledAidesk"></span> Aidesk
+              </div>
+              <div class="sp" title="Firewall stats">
+                <span class="led" id="ledFirewall"></span> Firewall
+              </div>
+            </div>
+
+            <span class="chip d-none d-md-inline"><i class="bi bi-shield-lock"></i> Mode confidentiel</span>
+            <span class="chip d-none d-lg-inline"><i class="bi bi-diagram-3"></i> Personas synchronisées</span>
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <span class="chip"><i class="bi bi-person-circle"></i> <%= userName %></span>
+            <button class="btn btn-soft btn-sm" id="btnClear"><i class="bi bi-trash3"></i> Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="grid">
+
+        <!-- LEFT: PERSONAS -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="bi bi-people"></i>
+              Cabinet IA
+              <span class="chip" id="docChip">Aucun document</span>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-soft btn-sm" id="btnAnalyzeAll" title="Lancer l’analyse multi-personas">
+                <i class="bi bi-lightning-charge"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="persona-list" id="personaList">
+            <% personas.forEach(p => { %>
+              <div class="persona-card mb-2" data-persona-id="<%= p.id %>" tabindex="0">
+                <div class="persona-aura" style="background:<%= p.color %>;"></div>
+                <div class="avatar" style="box-shadow: 0 0 0 4px rgba(255,255,255,.03), 0 0 32px <%= p.color %>33;">
+                  <span><%= p.avatarEmoji || "🤖" %></span>
+                </div>
+                <div class="persona-meta">
+                  <h6><%= p.name %></h6>
+                  <p><span class="fw-semibold"><%= p.ministry %></span> • <%= p.focus %></p>
+                  <div class="persona-mini">
+                    <span class="chip"><i class="bi bi-person-badge"></i> <%= p.role %></span>
+                    <span class="chip"><i class="bi bi-eye"></i> Perspective</span>
+                    <span class="chip"><i class="bi bi-zoom-in"></i> Zoom</span>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- CENTER: CHATBOARD -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="bi bi-chat-dots"></i>
+              Chatboard Cabinet
+              <span class="chip" id="modeChip">Mode: Cabinet</span>
+            </div>
+
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+              <select class="form-select form-select-sm" id="personaMode" style="width: 220px; background: rgba(255,255,255,.03); color: var(--txt); border-color: rgba(255,255,255,.10); border-radius: 14px;">
+                <option value="cabinet">Cabinet (tous)</option>
+                <option value="single">Persona sélectionnée</option>
+              </select>
+              <button class="btn btn-soft btn-sm" id="btnSummarize"><i class="bi bi-file-text"></i> Résumer</button>
+            </div>
+          </div>
+
+          <div class="chat-wrap" id="chatWrap">
+            <div class="msg">
+              <div class="avatar" style="width:38px;height:38px;border-radius:14px;">
+                <span>🧠</span>
+              </div>
+              <div>
+                <div class="who">GouvBrain <span class="chip">système</span></div>
+                <div class="bubble">
+Bienvenue. Déposez un PDF dans la zone d’ingestion en bas.
+Ensuite, chaque membre du cabinet IA produira une analyse (risques, opportunités, décisions, actions).
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="composer">
+            <div class="d-flex gap-2">
+              <input id="chatInput" class="form-control" placeholder="Posez une question au Cabinet IA… (ex: 'Quels risques budgétaires ?' / 'Décision recommandée ?')" />
+              <button class="btn btn-soft" id="btnSend"><i class="bi bi-send"></i></button>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-2">
+              <div class="tiny">
+                <i class="bi bi-info-circle"></i>
+                Astuce: utilisez <span class="chip">Mode Persona</span> pour interroger un seul expert.
+              </div>
+              <div class="tiny" id="statusLine">● Prêt</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: DOCUMENT + ANALYSIS -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <i class="bi bi-file-earmark-pdf"></i>
+              Dossier & Analyses
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-soft btn-sm" id="btnExport" title="Exporter (via API si disponible)">
+                <i class="bi bi-download"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="doc-body" id="docBody">
+            <div class="kpi">
+              <div class="box">
+                <div class="label">Document</div>
+                <div class="value" id="docTitle">—</div>
+              </div>
+              <div class="box">
+                <div class="label">Statut</div>
+                <div class="value" id="docStatus">En attente</div>
+              </div>
+              <div class="box">
+                <div class="label">Pages</div>
+                <div class="value" id="docPages">—</div>
+              </div>
+              <div class="box">
+                <div class="label">DocID</div>
+                <div class="value" id="docId">—</div>
+              </div>
+            </div>
+
+            <div class="analysis-card mt-3">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h6><i class="bi bi-journal-text"></i> Résumé exécutif</h6>
+                <span class="chip" id="topicsChip">0 thèmes</span>
+              </div>
+              <div class="tiny mt-2" id="docSummary">Déposez un PDF pour générer un résumé et activer les analyses multi-personas.</div>
+            </div>
+
+            <!-- Contradictions + Arbitrages (dynamic) -->
+            <div id="contradictionArea" class="mt-2"></div>
+
+            <div id="analysisArea" class="mt-2"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FOOTER INGESTION ZONE -->
+    <div class="footerbar">
+      <div class="dropzone" id="dropzone">
+        <div class="d-flex align-items-center gap-3 flex-wrap" style="flex: 1 1 520px;">
+          <div class="d-flex align-items-center gap-2">
+            <div class="avatar" style="width:44px;height:44px;border-radius:16px;">
+              <span>📥</span>
+            </div>
+            <div style="min-width:0;">
+              <div class="fw-bold">Ingestion PDF</div>
+              <div class="tiny">Glissez-déposez un PDF ici, ou cliquez pour sélectionner. Le Cabinet IA se déclenche ensuite.</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <input type="file" id="pdfInput" accept="application/pdf" hidden />
+            <button class="btn btn-soft" id="btnPick"><i class="bi bi-upload"></i> Choisir PDF</button>
+            <button class="btn btn-soft" id="btnIngest" disabled><i class="bi bi-cpu"></i> Ingest</button>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3" style="min-width: min(420px, 100%); flex: 1 1 420px;">
+          <div class="w-100">
+            <div class="d-flex justify-content-between tiny mb-1">
+              <span id="fileName">Aucun fichier</span>
+              <span id="fileSize">—</span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar bg-success" id="progBar"></div>
+            </div>
+          </div>
+          <span class="chip" id="ingestMode">API</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ----------------------------
+    // State (NO DEMO)
+    // ----------------------------
+    const state = {
+      docId: null,
+      docTitle: null,
+      docPages: null,
+      topics: [],
+      selectedPersonaId: "<%= personas[0]?.id || 'pm' %>",
+      file: null,
+      lastCabinetReplies: [] // [{personaId, ministry, text, decision}]
+    };
+
+    const personas = <%- JSON.stringify(personas) %>;
+
+    // ✅ SAFE: always hit same origin (correct host:port)
+    const API_BASE = window.location.origin;
+
+    // ----------------------------
+    // Ministry Playbook (dynamic routing + non-generic answers)
+    // ----------------------------
+    const MINISTRY_PLAYBOOK = {
+      "Primature": {
+        angle: "arbitrage inter-ministériel, priorisation, gouvernance d’exécution",
+        mustMention: ["arbitrage", "responsables", "délais", "coordination", "instructions", "suivi"],
+        kpi: ["% mesures exécutées", "délai de mise en œuvre", "taux de conformité inter-ministères"]
+      },
+      "Finances": {
+        angle: "coûts, financement, soutenabilité budgétaire, contrôle et traçabilité",
+        mustMention: ["budget", "coût", "financement", "contrôle", "ligne budgétaire", "audit"],
+        kpi: ["coût estimé", "écart budgétaire", "taux de couverture financement"]
+      },
+      "Plan": {
+        angle: "impact socio-économique, ROI, investissements, PPP, phasage",
+        mustMention: ["ROI", "investissements", "phasage", "PPP", "priorités", "indicateurs"],
+        kpi: ["ROI projeté", "emplois/impacts", "taux d’achèvement jalons"]
+      },
+      "Intérieur": {
+        angle: "exécution terrain, sécurité intérieure, ordre public, gouvernance locale",
+        mustMention: ["terrain", "procédures", "forces", "commandement", "préfectures", "coordination locale"],
+        kpi: ["taux d’incidents", "temps de réponse", "couverture territoriale"]
+      },
+      "Justice": {
+        angle: "base légale, conformité, risques juridiques, responsabilité et recours",
+        mustMention: ["base légale", "conformité", "responsabilité", "sanctions", "recours", "décrets/arrêtés"],
+        kpi: ["nb textes requis", "risque contentieux", "taux conformité"]
+      },
+      "Défense": {
+        angle: "souveraineté, risques stratégiques, continuité, coordination sécurité",
+        mustMention: ["souveraineté", "continuité", "menaces", "résilience", "coordination", "plan de crise"],
+        kpi: ["niveau menace", "temps de mobilisation", "couverture risques critiques"]
+      },
+      "Santé": {
+        angle: "surveillance sanitaire, capacités hospitalières, protocoles, approvisionnements",
+        mustMention: ["surveillance", "hôpitaux", "protocoles", "stocks", "tests", "vaccination si pertinent"],
+        kpi: ["taux occupation lits", "délai dépistage", "niveau stocks critiques"]
+      },
+      "Éducation": {
+        angle: "continuité pédagogique, prévention, formation, inclusion",
+        mustMention: ["continuité", "protocoles", "formation", "inclusion", "écoles", "sensibilisation"],
+        kpi: ["taux présence", "taux couverture formation", "incidents sanitaires écoles"]
+      },
+      "Énergie": {
+        angle: "continuité énergétique, chaîne de valeur, revenus, risques d’approvisionnement",
+        mustMention: ["continuité", "approvisionnement", "revenus", "logistique", "sécurité sites", "prix"],
+        kpi: ["taux disponibilité", "pertes/logistique", "recettes secteur"]
+      },
+      "Numérique": {
+        angle: "données, IA, cyber, interopérabilité, tableaux de bord, traçabilité",
+        mustMention: ["données", "KPI", "interopérabilité", "cyber", "tableau de bord", "qualité"],
+        kpi: ["latence data", "taux disponibilité", "taux incidents cyber"]
+      },
+      "Environnement": {
+        angle: "ESG, conformité, risques climatiques/impacts, contrôle",
+        mustMention: ["conformité", "impacts", "ESG", "mesures", "contrôle", "prévention"],
+        kpi: ["incidents environnementaux", "taux conformité", "réduction impacts"]
+      }
+    };
+
+    // ----------------------------
+    // DOM
+    // ----------------------------
+    const personaList   = document.getElementById("personaList");
+    const modeChip      = document.getElementById("modeChip");
+    const docChip       = document.getElementById("docChip");
+    const personaMode   = document.getElementById("personaMode");
+
+    const chatWrap      = document.getElementById("chatWrap");
+    const chatInput     = document.getElementById("chatInput");
+    const btnSend       = document.getElementById("btnSend");
+
+    const pdfInput      = document.getElementById("pdfInput");
+    const btnPick       = document.getElementById("btnPick");
+    const btnIngest     = document.getElementById("btnIngest");
+    const dropzone      = document.getElementById("dropzone");
+    const fileName      = document.getElementById("fileName");
+    const fileSize      = document.getElementById("fileSize");
+    const progBar       = document.getElementById("progBar");
+
+    const docTitleEl    = document.getElementById("docTitle");
+    const docStatusEl   = document.getElementById("docStatus");
+    const docPagesEl    = document.getElementById("docPages");
+    const docIdEl       = document.getElementById("docId");
+    const docSummaryEl  = document.getElementById("docSummary");
+    const topicsChip    = document.getElementById("topicsChip");
+    const analysisArea  = document.getElementById("analysisArea");
+    const contradictionArea = document.getElementById("contradictionArea");
+    const statusLine    = document.getElementById("statusLine");
+
+    const btnAnalyzeAll = document.getElementById("btnAnalyzeAll");
+    const btnSummarize  = document.getElementById("btnSummarize");
+    const btnClear      = document.getElementById("btnClear");
+    const btnExport     = document.getElementById("btnExport");
+
+    // Status LEDs
+    const ledApi      = document.getElementById("ledApi");
+    const ledOllama   = document.getElementById("ledOllama");
+    const ledAidesk   = document.getElementById("ledAidesk");
+    const ledFirewall = document.getElementById("ledFirewall");
+
+    // ----------------------------
+    // Helpers
+    // ----------------------------
+    function fmtBytes(bytes){
+      if(!bytes && bytes !== 0) return "—";
+      const units = ["B","KB","MB","GB"];
+      let i=0, n=bytes;
+      while(n>=1024 && i<units.length-1){ n/=1024; i++; }
+      return `${n.toFixed(i?1:0)} ${units[i]}`;
+    }
+
+    function setStatus(text, busy=false){
+      statusLine.innerHTML = busy ? `<span class="blink">●</span> ${text}` : `● ${text}`;
+    }
+
+    function scrollChatToBottom(){
+      chatWrap.scrollTop = chatWrap.scrollHeight;
+    }
+
+    function personaById(id){ return personas.find(p=>p.id===id) || personas[0]; }
+
+    function escapeHtml(s){
+      return (s||"").replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      })[m]);
+    }
+
+    function renderPersonaSelection(){
+      [...personaList.querySelectorAll(".persona-card")].forEach(card=>{
+        card.classList.toggle("active", card.dataset.personaId === state.selectedPersonaId);
+      });
+    }
+
+    function addMessage({from="me", text="", personaId=null, chipOverride=null}){
+      const p = personaId ? personaById(personaId) : null;
+      const isMe = from === "me";
+      const who = isMe ? "<%= userName %>" : (p ? p.name : "GouvBrain");
+      const chip = chipOverride ? chipOverride : (p ? p.ministry : "système");
+
+      const msg = document.createElement("div");
+      msg.className = "msg" + (isMe ? " me" : "");
+      msg.innerHTML = `
+        ${isMe ? "" : `
+          <div class="avatar" style="width:38px;height:38px;border-radius:14px; box-shadow: 0 0 24px ${(p?.color||"#3b82f6")}33;">
+            <span>${p?.avatarEmoji || "🧠"}</span>
+          </div>
+        `}
+        <div style="${isMe ? "max-width:78%;" : ""}">
+          <div class="who">${escapeHtml(who)} <span class="chip">${escapeHtml(chip)}</span></div>
+          <div class="bubble">${escapeHtml(text)}</div>
+        </div>
+      `;
+      chatWrap.appendChild(msg);
+      scrollChatToBottom();
+    }
+
+    function setDocMeta({docId, title, pages, status, summary, topics=[]}){
+      state.docId = docId ?? state.docId;
+      state.docTitle = title ?? state.docTitle;
+      state.docPages = (pages ?? state.docPages);
+      state.topics = Array.isArray(topics) ? topics : (state.topics || []);
+
+      docIdEl.textContent = state.docId || "—";
+      docTitleEl.textContent = state.docTitle || "—";
+      docPagesEl.textContent = (state.docPages ?? "—");
+      docStatusEl.textContent = status || "Prêt";
+
+      docChip.textContent = state.docId ? "Document chargé" : "Aucun document";
+
+      topicsChip.textContent = `${(state.topics || []).length} thèmes`;
+      if (typeof summary === "string" && summary.trim().length) docSummaryEl.textContent = summary;
+    }
+
+    function renderAnalyses(analyses){
+      analysisArea.innerHTML = "";
+      (analyses || []).forEach(a=>{
+        const p = personaById(a.personaId);
+        const card = document.createElement("div");
+        card.className = "analysis-card";
+        card.innerHTML = `
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div style="min-width:0;">
+              <h6 style="margin-bottom:6px;">
+                <span style="filter: drop-shadow(0 0 18px ${p.color}55);">${p.avatarEmoji||"🤖"}</span>
+                ${escapeHtml(p.name)}
+              </h6>
+              <div class="stance">
+                <span style="width:10px;height:10px;border-radius:999px;background:${p.color}; box-shadow:0 0 18px ${p.color}88;"></span>
+                <span>${escapeHtml(a.stance || "Perspective & recommandations")}</span>
+              </div>
+            </div>
+            <span class="chip"><i class="bi bi-briefcase"></i> ${escapeHtml(p.ministry)}</span>
+          </div>
+
+          ${a.notes ? `<div class="tiny mb-2">${escapeHtml(a.notes)}</div>` : ""}
+
+          <div class="row g-2">
+            <div class="col-12">
+              <div class="tiny fw-semibold mb-1"><i class="bi bi-exclamation-triangle"></i> Risques</div>
+              <ul>${(a.risks||[]).slice(0,8).map(x=>`<li>${escapeHtml(x)}</li>`).join("") || "<li>Aucun risque majeur identifié</li>"}</ul>
+            </div>
+            <div class="col-12 mt-2">
+              <div class="tiny fw-semibold mb-1"><i class="bi bi-check2-circle"></i> Actions recommandées</div>
+              <ul>${(a.actions||[]).slice(0,8).map(x=>`<li>${escapeHtml(x)}</li>`).join("") || "<li>Proposer un plan d’action</li>"}</ul>
+            </div>
+          </div>
+        `;
+        analysisArea.appendChild(card);
+      });
+    }
+
+    function setLed(el, status){
+      el.classList.remove("ok","warn","bad");
+      if(status === "ok") el.classList.add("ok");
+      else if(status === "warn") el.classList.add("warn");
+      else if(status === "bad") el.classList.add("bad");
+    }
+
+    async function safeFetchJson(url, opts){
+      const res = await fetch(url, opts);
+      if(!res.ok){
+        const txt = await res.text().catch(()=> "");
+        const err = new Error(`HTTP ${res.status} on ${url}`);
+        err.status = res.status;
+        err.body = txt;
+        throw err;
+      }
+      return await res.json();
+    }
+
+    // ----------------------------
+    // Text parsing: Decision extraction + contradictions heuristics
+    // ----------------------------
+    function normalizeText(s){ return (s||"").toLowerCase().replace(/\s+/g," ").trim(); }
+
+    function extractSection(txt, label){
+      const re = new RegExp(`${label}\\s*:?([\\s\\S]*?)(\\n\\s*(Risques|Actions|Décision|Decision|Indicateurs|KPI|$)\\s*:?)`, "i");
+      const m = txt.match(re);
+      if(m && m[1]) return m[1].trim();
+      return "";
+    }
+
+    function extractDecision(txt){
+      const m = txt.match(/(Décision|Decision)\s*:?([\s\S]*?)(\n\s*(Indicateurs|KPI|$)\s*:?)?/i);
+      if(m && m[2]) {
+        const line = m[2].trim().split("\n").map(x=>x.trim()).filter(Boolean)[0] || m[2].trim();
+        return line.slice(0, 320);
+      }
+      // fallback: last meaningful sentence
+      const lines = (txt||"").split("\n").map(s=>s.trim()).filter(Boolean);
+      return (lines[lines.length-1] || "").slice(0, 320);
+    }
+
+    const POLARITY = {
+      restrict: ["fermer","interdire","suspendre","limiter","couvre-feu","contrôler","renforcer","obligatoire","restriction","sanctionner"],
+      relax: ["ouvrir","assouplir","lever","libéraliser","autoriser","reprendre","alléger","faciliter"],
+      spendUp: ["augmenter le budget","financer","mobiliser des fonds","subventionner","acheter","recruter","investir"],
+      spendDown: ["réduire le budget","geler","couper","rationaliser","économiser","reporter","annuler"]
+    };
+
+    function scorePolarity(decision){
+      const d = normalizeText(decision);
+      const s = {restrict:0, relax:0, spendUp:0, spendDown:0};
+      for (const k of Object.keys(POLARITY)){
+        for (const w of POLARITY[k]){
+          if(d.includes(w)) s[k] += 1;
+        }
+      }
+      return s;
+    }
+
+    function detectContradictions(replies){
+      // replies: [{personaId, ministry, decision, text}]
+      const pairs = [];
+      for(let i=0;i<replies.length;i++){
+        for(let j=i+1;j<replies.length;j++){
+          const a = replies[i], b = replies[j];
+          const sa = scorePolarity(a.decision || "");
+          const sb = scorePolarity(b.decision || "");
+
+          const conflict =
+            (sa.restrict>0 && sb.relax>0) || (sa.relax>0 && sb.restrict>0) ||
+            (sa.spendUp>0 && sb.spendDown>0) || (sa.spendDown>0 && sb.spendUp>0);
+
+          if(conflict){
+            pairs.push({
+              a, b,
+              why: [
+                ( (sa.restrict>0 && sb.relax>0) || (sa.relax>0 && sb.restrict>0) ) ? "Orientation mesures (restriction vs assouplissement)" : null,
+                ( (sa.spendUp>0 && sb.spendDown>0) || (sa.spendDown>0 && sb.spendUp>0) ) ? "Orientation budget (augmentation vs réduction)" : null
+              ].filter(Boolean).join(" • ")
+            });
+          }
+        }
+      }
+      return pairs.slice(0, 12);
+    }
+
+    function renderContradictions(contradictions){
+      contradictionArea.innerHTML = "";
+      if(!contradictions || contradictions.length === 0) return;
+
+      const card = document.createElement("div");
+      card.className = "alert-card";
+      card.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div class="fw-bold"><i class="bi bi-shuffle"></i> Contradictions détectées</div>
+          <span class="chip">${contradictions.length} arbitrage(s)</span>
+        </div>
+        <div class="tiny mt-2">Ces contradictions sont détectées par heuristiques. La Primature synthétise ci-dessous.</div>
+        <div class="mt-2">
+          ${contradictions.map((c, idx)=>`
+            <div class="mt-2" style="border-top:1px solid rgba(255,255,255,.08); padding-top:10px;">
+              <div class="tiny fw-semibold">${idx+1}. ${escapeHtml(c.why || "Contradiction")}</div>
+              <div class="tiny mt-1"><span class="chip">${escapeHtml(c.a.ministry)}</span> ${escapeHtml((c.a.decision||"").slice(0,180))}</div>
+              <div class="tiny mt-1"><span class="chip">${escapeHtml(c.b.ministry)}</span> ${escapeHtml((c.b.decision||"").slice(0,180))}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      contradictionArea.appendChild(card);
+    }
+
+    // ----------------------------
+    // Real API calls (SAFE)
+    // ----------------------------
+    async function apiIngest(file){
+      const fd = new FormData();
+      fd.append("<%= process.env.INGEST_FORM_FIELD || 'file' %>", file);
+      return await safeFetchJson(`${API_BASE}/api/gouvbrain/ingest`, { method:"POST", body: fd });
+    }
+
+    function buildSystemPromptForPersona(p){
+      const pb = MINISTRY_PLAYBOOK[p?.ministry] || {
+        angle: p?.focus || "analyse gouvernementale",
+        mustMention: ["risques","actions","décision"],
+        kpi: ["KPI 1","KPI 2","KPI 3"]
+      };
+
+      // Anti-generic guardrails + ministry-specific obligations
+      return `
+Tu es ${p.name}, ${p.role} du ministère ${p.ministry}.
+ANGLE OBLIGATOIRE: ${pb.angle}
+
+INTERDICTIONS:
+- Réponse générique
+- "clarifier les objectifs"
+- "plan en 3 étapes" (sauf si tu fournis des étapes concrètes, chiffrées et responsables)
+
+OBLIGATIONS:
+- Répondre UNIQUEMENT du point de vue de ${p.ministry}
+- Mentionner explicitement: ${pb.mustMention.join(", ")}
+- Donner des éléments concrets: responsables, délais (si possible), moyens
+- Ne pas répéter les autres ministères
+
+FORMAT STRICT:
+1) Risques (${p.ministry}) — 4 à 8 points
+2) Actions (${p.ministry}) — 4 à 8 points
+3) Décision recommandée — 1 ligne claire
+4) Indicateurs (3 KPI) — parmi: ${pb.kpi.join(" | ")}
+
+Si tu n’as pas assez d’infos, pose 2 questions ciblées (uniquement) en fin de réponse.
+      `.trim();
+    }
+
+    function buildSystemPromptCabinet(){
+      // Used only for special aggregate tasks (PM synthesis mostly done via PM persona)
+      return `
+Tu es le Cabinet IA inter-ministériel.
+Tu dois produire une sortie structurée par ministère (Primature, Finances, Intérieur, Justice, Santé, Numérique).
+Pas de généralités. Tu dois être actionnable (responsables, délais, métriques).
+      `.trim();
+    }
+
+    // ✅ SAFE: chat goes to /api/ollama/chat (your running server)
+    async function apiChat(_docId, message, personaModeVal, personaId){
+      const p = (personaModeVal === "single" && personaId) ? personaById(personaId) : null;
+
+      const system = p
+        ? buildSystemPromptForPersona(p)
+        : buildSystemPromptCabinet();
+
+      const payload = {
+        model: "llama3.1:8b",
+        stream: false,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: message }
+        ]
+      };
+
+      return await safeFetchJson(`${API_BASE}/api/ollama/chat`, {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+    }
+
+    // Prime Minister synthesis (uses PM persona, but prompt injects all ministry outputs + contradictions)
+    async function apiPrimeMinisterSynthesis(question, replies, contradictions){
+      const pm = personaById("pm");
+
+      const pack = replies.map(r => {
+        return `### ${r.ministry} (${r.personaName})
+Décision: ${r.decision || "—"}
+Réponse:
+${r.text || "—"}
+`;
+      }).join("\n");
+
+      const contra = (contradictions || []).map((c, i) => {
+        return `- #${i+1} ${c.why || "Contradiction"}: ${c.a.ministry} vs ${c.b.ministry}`;
+      }).join("\n") || "Aucune contradiction détectée.";
+
+      const pmSystem = `
+Tu es ${pm.name}, ${pm.role} à la ${pm.ministry}. Ton rôle: arbitrage final et pilotage de l'exécution.
+
+À partir des réponses ministérielles ci-dessous, tu dois:
+1) Résumer en 8-12 lignes le tableau de situation
+2) Lister les contradictions (si présentes) et proposer un arbitrage clair
+3) Émettre UNE décision du Cabinet (décision finale)
+4) Donner un plan d’exécution en 72h / 30 jours / 90 jours (actions + responsables + livrables)
+5) Définir 6 KPI de suivi (mesurables)
+
+INTERDICTION:
+- Réponse vague
+- "clarifier les objectifs" sans livrables
+
+FORMAT STRICT:
+A) Synthèse
+B) Contradictions & arbitrages
+C) Décision Cabinet (finale)
+D) Exécution (72h / 30j / 90j)
+E) KPI (6)
+      `.trim();
+
+      const pmUser = `
+QUESTION INITIALE:
+${question}
+
+CONTRADICTIONS DÉTECTÉES:
+${contra}
+
+RÉPONSES DES MINISTÈRES:
+${pack}
+      `.trim();
+
+      const payload = {
+        model: "llama3.1:8b",
+        stream: false,
+        messages: [
+          { role: "system", content: pmSystem },
+          { role: "user", content: pmUser }
+        ]
+      };
+
+      return await safeFetchJson(`${API_BASE}/api/ollama/chat`, {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+    }
+
+    // ✅ SAFE: Export not implemented -> clean message (no fake downloads)
+    async function apiExport(_docId){
+      const err = new Error("Export non implémenté côté serveur");
+      err.status = 501;
+      throw err;
+    }
+
+    function pickAnswer(payload){
+      return (
+        payload?.message?.content ||
+        payload?.response ||
+        payload?.text ||
+        (Array.isArray(payload?.messages) ? payload.messages.map(m => m.text || m.content || "").join("\n") : "")
+      ) || "";
+    }
+
+    // ----------------------------
+    // Live Status Lights (NO MOCK)
+    // ----------------------------
+    async function pollHealth(){
+      // API (main)
+      try{
+        await fetch(`${API_BASE}/api/health`, { method:"GET" });
+        setLed(ledApi, "ok");
+      }catch(e){
+        setLed(ledApi, "bad");
+      }
+
+      // Ollama
+      try{
+        await fetch(`${API_BASE}/api/ollama/health`, { method:"GET" });
+        setLed(ledOllama, "ok");
+      }catch(e){
+        setLed(ledOllama, "bad");
+      }
+
+      // Aidesk
+      try{
+        await fetch(`${API_BASE}/api/aidesk/health`, { method:"GET" });
+        setLed(ledAidesk, "ok");
+      }catch(e){
+        setLed(ledAidesk, "bad");
+      }
+
+      // Firewall
+      try{
+        await fetch(`${API_BASE}/api/firewall-stats`, { method:"GET" });
+        setLed(ledFirewall, "ok");
+      }catch(e){
+        setLed(ledFirewall, "bad");
+      }
+    }
+
+    // ----------------------------
+    // UI interactions
+    // ----------------------------
+    personaList.addEventListener("click", (e)=>{
+      const card = e.target.closest(".persona-card");
+      if(!card) return;
+      state.selectedPersonaId = card.dataset.personaId;
+      renderPersonaSelection();
+
+      if (personaMode.value === "single"){
+        const p = personaById(state.selectedPersonaId);
+        modeChip.textContent = `Mode: ${p.name}`;
+      }
+    });
+
+    personaMode.addEventListener("change", ()=>{
+      if(personaMode.value === "cabinet"){
+        modeChip.textContent = "Mode: Cabinet";
+      }else{
+        const p = personaById(state.selectedPersonaId);
+        modeChip.textContent = `Mode: ${p.name}`;
+      }
+    });
+
+    btnPick.addEventListener("click", ()=> pdfInput.click());
+
+    pdfInput.addEventListener("change", ()=>{
+      if(!pdfInput.files || !pdfInput.files[0]) return;
+      setSelectedFile(pdfInput.files[0]);
+    });
+
+    function setSelectedFile(file){
+      if(!file) return;
+      if(file.type !== "application/pdf"){
+        addMessage({from:"ai", text:"⚠️ Veuillez sélectionner un fichier PDF (application/pdf)."});
+        return;
+      }
+      state.file = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = fmtBytes(file.size);
+      btnIngest.disabled = false;
+      progBar.style.width = "0%";
+      setStatus("Fichier prêt — cliquez Ingest", false);
+    }
+
+    // Drag/drop
+    ["dragenter","dragover"].forEach(ev=>{
+      dropzone.addEventListener(ev, (e)=>{
+        e.preventDefault();
+        dropzone.classList.add("dragover");
+      });
+    });
+    ["dragleave","drop"].forEach(ev=>{
+      dropzone.addEventListener(ev, (e)=>{
+        e.preventDefault();
+        dropzone.classList.remove("dragover");
+      });
+    });
+    dropzone.addEventListener("drop", (e)=>{
+      const file = e.dataTransfer.files?.[0];
+      if(file) setSelectedFile(file);
+    });
+    dropzone.addEventListener("click", (e)=>{
+      if(e.target.closest("button")) return;
+      pdfInput.click();
+    });
+
+    btnIngest.addEventListener("click", async ()=>{
+      if(!state.file) return;
+
+      setStatus("Ingestion du PDF…", true);
+      docStatusEl.textContent = "Ingestion…";
+      progBar.style.width = "18%";
+
+      try{
+        const ingest = await apiIngest(state.file);
+        progBar.style.width = "60%";
+
+        setDocMeta({
+          docId: ingest.docId,
+          title: ingest.title || state.file.name,
+          pages: ingest.pages,
+          status: "Ingesté",
+          summary: ingest.summary,
+          topics: ingest.keyTopics || []
+        });
+
+        addMessage({from:"ai", text:`✅ Document ingéré: ${ingest.title || state.file.name} (${ingest.pages ?? "?"} pages). Lancement de l’analyse…`});
+        progBar.style.width = "80%";
+
+        // Auto-run analysis after ingestion (client-side)
+        await runAnalyzeAll();
+
+        progBar.style.width = "100%";
+        setTimeout(()=> progBar.style.width = "0%", 900);
+        setStatus("Prêt", false);
+      }catch(err){
+        console.error(err);
+        docStatusEl.textContent = "Erreur";
+        addMessage({from:"ai", text:`❌ Échec ingestion. Endpoint /api/gouvbrain/ingest indisponible ou erreur serveur. (${err.message})`});
+        setStatus("Erreur ingestion", false);
+        progBar.style.width = "0%";
+      }
+    });
+
+    // ✅ SAFE: Analyze All runs client-side using /api/ollama/chat
+    async function runAnalyzeAll(){
+      if(!state.docId){
+        addMessage({from:"ai", text:"ℹ️ DocID absent. Je lance quand même une analyse générale (sans référence document)."});
+      }
+
+      setStatus("Analyse multi-personas…", true);
+      docStatusEl.textContent = "Analyse…";
+      analysisArea.innerHTML = "";
+      contradictionArea.innerHTML = "";
+
+      const analyses = [];
+
+      for (const p of personas){
+        try{
+          const q = "Analyse le dossier et propose: 6 risques, 6 actions, 1 décision recommandée, et 3 KPI. Réponds STRICTEMENT au format Risques/Actions/Décision/Indicateurs.";
+          const out = await apiChat(state.docId, q, "single", p.id);
+          const txt = pickAnswer(out);
+
+          const risksBlock = (txt.match(/Risques?\s*:?([\s\S]*?)(Actions?|Décision|Decision|Indicateurs|KPI|$)/i)?.[1] || "");
+          const actionsBlock = (txt.match(/Actions?\s*:?([\s\S]*?)(Décision|Decision|Indicateurs|KPI|$)/i)?.[1] || "");
+
+          const risks = risksBlock.split("\n").map(s=>s.replace(/^[-•\d.)\s]+/,"").trim()).filter(Boolean).slice(0,8);
+          const actions = actionsBlock.split("\n").map(s=>s.replace(/^[-•\d.)\s]+/,"").trim()).filter(Boolean).slice(0,8);
+
+          analyses.push({
+            personaId: p.id,
+            stance: "Analyse",
+            risks: risks.length ? risks : ["Voir notes (réponse complète)"],
+            actions: actions.length ? actions : ["Voir notes (réponse complète)"],
+            notes: txt
+          });
+        }catch(e){
+          analyses.push({ personaId: p.id, stance:"Erreur", risks:[], actions:[], notes:`Erreur: ${e.message}` });
+        }
+      }
+
+      renderAnalyses(analyses);
+      docStatusEl.textContent = "Analyse prête";
+      addMessage({from:"ai", text:"🧾 Analyses générées (client-side). Posez vos questions dans le chat pour arbitrages & plan d’action."});
+      setStatus("Prêt", false);
+    }
+
+    btnAnalyzeAll.addEventListener("click", runAnalyzeAll);
+
+    btnSend.addEventListener("click", sendChat);
+    chatInput.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter") sendChat();
+    });
+
+    // ----------------------------
+    // AUTOMATIC MINISTRY ROUTING (Cabinet mode)
+    // + Contradiction detection
+    // + Prime Minister synthesis
+    // ----------------------------
+    async function sendChat(){
+      const text = (chatInput.value || "").trim();
+      if(!text) return;
+
+      addMessage({from:"me", text});
+      chatInput.value = "";
+
+      const mode = personaMode.value;
+
+      try{
+        if(mode === "single"){
+          setStatus("Persona en réflexion…", true);
+          const personaId = state.selectedPersonaId;
+          const payload = await apiChat(state.docId, text, "single", personaId);
+          const answer = pickAnswer(payload);
+          addMessage({from:"ai", personaId, text: answer || "—"});
+          setStatus("Prêt", false);
+          return;
+        }
+
+        // Cabinet: route to each ministry automatically
+        setStatus("Cabinet IA (multi-ministères)…", true);
+        contradictionArea.innerHTML = "";
+
+        const cabinetReplies = [];
+
+        // (1) Collect each ministry reply
+        for(const p of personas){
+          setStatus(`Cabinet IA: ${p.ministry}…`, true);
+          const payload = await apiChat(state.docId, text, "single", p.id);
+          const answer = pickAnswer(payload);
+
+          addMessage({from:"ai", personaId: p.id, text: answer || "—"});
+
+          const decision = extractDecision(answer || "");
+          cabinetReplies.push({
+            personaId: p.id,
+            personaName: p.name,
+            ministry: p.ministry,
+            text: answer || "",
+            decision
+          });
+        }
+
+        state.lastCabinetReplies = cabinetReplies;
+
+        // (2) Detect contradictions (heuristics)
+        const contradictions = detectContradictions(cabinetReplies);
+        renderContradictions(contradictions);
+
+        // (3) PM synthesis (final arbitration)
+        setStatus("Primature: arbitrage & synthèse…", true);
+        const pmPayload = await apiPrimeMinisterSynthesis(text, cabinetReplies, contradictions);
+        const pmAnswer = pickAnswer(pmPayload);
+
+        // show as PM message
+        addMessage({from:"ai", personaId:"pm", text: pmAnswer || "—", chipOverride: "Primature • Synthèse"});
+        setStatus("Prêt", false);
+
+      }catch(err){
+        console.error(err);
+        addMessage({from:"ai", text:`❌ Chat API indisponible. Vérifiez /api/ollama/chat. (${err.message})`});
+        setStatus("Erreur chat", false);
+      }
+    }
+
+    // ✅ SAFE: Summarize uses cabinet routing + PM synthesis
+    btnSummarize.addEventListener("click", async ()=>{
+      const question = "Génère un résumé exécutif (10 lignes) + 6 thèmes + 6 décisions proposées. Format strict et chiffrable.";
+
+      if(!state.docId){
+        addMessage({from:"ai", text:"ℹ️ Pas de DocID: je peux résumer à partir de votre demande, mais l’ingestion PDF est recommandée."});
+      }
+
+      setStatus("Résumé exécutif (multi-ministères)…", true);
+      try{
+        // collect per-ministry summaries
+        const replies = [];
+        for(const p of personas){
+          setStatus(`Résumé: ${p.ministry}…`, true);
+          const out = await apiChat(state.docId, question, "single", p.id);
+          const txt = pickAnswer(out);
+          replies.push({ personaId:p.id, personaName:p.name, ministry:p.ministry, text: txt, decision: extractDecision(txt) });
+        }
+
+        const contradictions = detectContradictions(replies);
+        renderContradictions(contradictions);
+
+        // PM synthesis for summary
+        setStatus("Primature: synthèse du résumé…", true);
+        const pmOut = await apiPrimeMinisterSynthesis("Résumé exécutif du dossier", replies, contradictions);
+        const pmTxt = pickAnswer(pmOut);
+
+        // Put into right panel summary field
+        if (pmTxt && typeof pmTxt === "string") docSummaryEl.textContent = pmTxt;
+
+        addMessage({from:"ai", personaId:"pm", text:"📌 Résumé exécutif mis à jour (synthèse Primature).", chipOverride:"Primature"});
+        setStatus("Prêt", false);
+      }catch(err){
+        console.error(err);
+        addMessage({from:"ai", text:`❌ Impossible de générer le résumé via /api/ollama/chat. (${err.message})`});
+        setStatus("Erreur résumé", false);
+      }
+    });
+
+    // ✅ SAFE: Export disabled unless you implement a real endpoint later
+    btnExport.addEventListener("click", async ()=>{
+      addMessage({from:"ai", text:"ℹ️ Export non disponible pour l’instant (aucun endpoint serveur). Implémentez /api/gouvbrain/export si nécessaire."});
+    });
+
+    btnClear.addEventListener("click", ()=>{
+      state.docId = null; state.docTitle = null; state.docPages = null; state.topics = [];
+      state.file = null;
+      state.lastCabinetReplies = [];
+
+      pdfInput.value = "";
+      fileName.textContent = "Aucun fichier";
+      fileSize.textContent = "—";
+      btnIngest.disabled = true;
+      progBar.style.width = "0%";
+
+      setDocMeta({
+        docId:null,
+        title:null,
+        pages:null,
+        status:"En attente",
+        summary:"Déposez un PDF pour générer un résumé et activer les analyses multi-personas.",
+        topics:[]
+      });
+      analysisArea.innerHTML = "";
+      contradictionArea.innerHTML = "";
+      docChip.textContent = "Aucun document";
+
+      // keep first system message only
+      const keep = chatWrap.querySelector(".msg");
+      chatWrap.innerHTML = "";
+      if(keep) chatWrap.appendChild(keep);
+
+      addMessage({from:"ai", text:"♻️ Session réinitialisée. Déposez un nouveau PDF."});
+      setStatus("Prêt", false);
+    });
+
+    // ----------------------------
+    // Init
+    // ----------------------------
+    function init(){
+      renderPersonaSelection();
+      setDocMeta({docId:null, title:null, pages:null, status:"En attente"});
+      setStatus("Prêt", false);
+
+      // Health polling
+      pollHealth();
+      setInterval(pollHealth, 7000);
+    }
+    init();
+  </script>
+</body>
+</html>

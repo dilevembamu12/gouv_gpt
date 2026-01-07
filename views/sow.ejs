@@ -1,0 +1,796 @@
+<%- /* sow.ejs — SOW Databox/PNH (FR) Responsive + EN source repliable
+    Source: /mnt/data/Recommended_SOW_Databox_PNH.docx
+*/ -%>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SOW — Système National de Surveillance Électronique (PNH) | Databox SA</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#07121f;
+      --bg1:#0b1e34;
+      --card:#0f2946;
+      --text:#eaf2ff;
+      --muted:#b9c7dd;
+      --line: rgba(255,255,255,.12);
+      --accent:#27d3a2;
+      --accent2:#5aa8ff;
+      --warn:#ffcf5a;
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+    body{
+      background: radial-gradient(1100px 700px at 10% 10%, rgba(90,168,255,.25), transparent 60%),
+                  radial-gradient(900px 600px at 85% 25%, rgba(39,211,162,.20), transparent 60%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .nav-glass{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(7,18,31,.65);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand{
+      display:flex; align-items:center; gap:.65rem;
+      font-weight: 900; letter-spacing:.2px;
+    }
+    .dot{
+      width: 12px; height: 12px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 4px rgba(39,211,162,.14);
+    }
+
+    .hero{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(15,41,70,.92), rgba(11,34,60,.88));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .hero-top{
+      padding: 1.75rem 1.75rem 1.2rem 1.75rem;
+      background:
+        radial-gradient(800px 300px at 10% 0%, rgba(90,168,255,.20), transparent 70%),
+        radial-gradient(800px 300px at 90% 0%, rgba(39,211,162,.16), transparent 70%);
+      border-bottom: 1px solid var(--line);
+    }
+    .hero-actions{
+      padding: 1rem 1.75rem 1.4rem 1.75rem;
+      display:flex; flex-wrap:wrap; gap:.65rem;
+      justify-content:center;
+    }
+    .btn-cta{
+      border:0;
+      border-radius: 14px;
+      padding: .82rem 1.02rem;
+      font-weight: 800;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    .btn-primary-cta{
+      background: linear-gradient(135deg, var(--accent), #16b88c);
+      color: #062018;
+    }
+    .btn-ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      color: var(--text);
+      border-radius: 14px;
+      padding: .82rem 1.02rem;
+      font-weight: 800;
+    }
+    .btn-ghost:hover{ background: rgba(255,255,255,.10); }
+    .pill{
+      display:inline-flex; align-items:center; gap:.4rem;
+      padding:.35rem .65rem;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(233,242,255,.9);
+      font-size: .85rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .pill.ok{
+      background: rgba(39,211,162,.12);
+      border: 1px solid rgba(39,211,162,.25);
+      color: #c9fff0;
+    }
+    .pill.warn{
+      background: rgba(255,207,90,.12);
+      border: 1px solid rgba(255,207,90,.25);
+      color: #fff2cc;
+    }
+    .muted{ color: var(--muted); }
+    .cardx{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.04);
+      box-shadow: 0 14px 35px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .toc a{
+      text-decoration:none;
+      color: rgba(233,242,255,.90);
+    }
+    .toc a:hover{ color: #fff; text-decoration: underline; }
+    .accordion .accordion-item{
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius: 14px;
+      overflow:hidden;
+      margin-bottom: .85rem;
+    }
+    .accordion-button{
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      font-weight: 900;
+    }
+    .accordion-button:not(.collapsed){
+      background: rgba(0,0,0,.28);
+      color: var(--text);
+      box-shadow:none;
+    }
+    .accordion-body{
+      color: var(--muted);
+      background: rgba(255,255,255,.02);
+    }
+    .section-block{
+      padding: .65rem .9rem;
+      border:1px dashed rgba(255,255,255,.14);
+      border-radius: 14px;
+      background: rgba(0,0,0,.14);
+    }
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: .92rem;
+      white-space: pre-wrap;
+      color: rgba(233,242,255,.92);
+    }
+    .copybar{
+      display:flex; gap:.5rem; flex-wrap:wrap;
+      justify-content:flex-end;
+      margin-bottom:.5rem;
+    }
+    .footer{
+      position: sticky;
+      bottom: 0;
+      border-top: 1px solid var(--line);
+      background: rgba(7,18,31,.75);
+      backdrop-filter: blur(10px);
+      padding: .65rem 0;
+      color: rgba(233,242,255,.75);
+    }
+
+    @media print {
+      body{ background:#fff !important; color:#111 !important; }
+      .nav-glass, .hero-actions, .footer, .copybar, .btn, .pill { display:none !important; }
+      .cardx, .hero{ box-shadow:none !important; border-color:#ddd !important; background:#fff !important; }
+      .accordion-button, .accordion-body{ background:#fff !important; color:#111 !important; }
+      .muted{ color:#444 !important; }
+      .mono{ color:#111 !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- NAV -->
+  <div class="nav-glass">
+    <div class="container py-3 d-flex align-items-center justify-content-between gap-2">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>SOW — PNH</span>
+        <span class="pill">Databox SA</span>
+      </div>
+      <div class="d-flex gap-2 flex-wrap justify-content-end">
+        <a class="btn btn-sm btn-outline-light" href="#toc">Sommaire</a>
+        <a class="btn btn-sm btn-outline-light" href="#sections">Sections</a>
+        <button class="btn btn-sm btn-outline-light" onclick="window.print()">Imprimer / PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container my-4">
+    <!-- HERO -->
+    <div class="hero mb-4">
+      <div class="hero-top">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+          <div>
+            <div class="pill ok">Statement of Work (SOW)</div>
+            <h1 class="mt-3 mb-2" style="font-weight:950; letter-spacing:.2px;">
+              Système National de Surveillance Électronique
+            </h1>
+            <p class="muted mb-0" style="max-width: 880px;">
+              Document de cadrage contractuel (périmètre, livrables, phases de déploiement, responsabilités, critères d’acceptation)
+              pour la <strong>Police Nationale d’Haïti (PNH)</strong>.
+            </p>
+          </div>
+          <div class="text-end">
+            <div class="pill warn">Base : proposition Databox SA</div><br/>
+            <div class="pill mt-2">Version page responsive</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <button class="btn-cta btn-primary-cta" onclick="copyAllFR()">Copier tout (FR)</button>
+        <button class="btn-ghost" onclick="scrollToEl('#sections')">Aller aux sections</button>
+        <button class="btn-ghost" onclick="toggleAllEN()">Afficher/Masquer tout (EN source)</button>
+      </div>
+    </div>
+
+    <!-- TOC -->
+    <div class="cardx p-3 mb-4" id="toc">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h3 class="mb-0" style="font-weight:950;">Sommaire</h3>
+        <span class="pill">Navigation rapide</span>
+      </div>
+      <div class="mt-2 toc">
+        <div class="row g-2">
+          <div class="col-12 col-lg-6">
+            <div class="section-block">
+              <div class="muted" style="font-weight:850;">Sections principales</div>
+              <ul class="mb-0 mt-2">
+                <li><a href="#s1">1. Objet (Purpose)</a></li>
+                <li><a href="#s2">2. Ordre de priorité (SOW Precedence)</a></li>
+                <li><a href="#s3">3. Périmètre (In-Scope)</a></li>
+                <li><a href="#s4">4. Phases de déploiement</a></li>
+                <li><a href="#s5">5. Livrables</a></li>
+                <li><a href="#s6">6. Acceptation</a></li>
+                <li><a href="#s7">7. Gestion des changements</a></li>
+                <li><a href="#s8">8. Dépendances client</a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-12 col-lg-6">
+            <div class="section-block">
+              <div class="muted" style="font-weight:850;">Commercial / Support / Hors périmètre</div>
+              <ul class="mb-0 mt-2">
+                <li><a href="#s9">9. Formation</a></li>
+                <li><a href="#s10">10. Conditions commerciales</a></li>
+                <li><a href="#s11">11. Limites de support</a></li>
+                <li><a href="#s12">12. Absence de garanties</a></li>
+                <li><a href="#s13">13. Hors périmètre</a></li>
+                <li><a href="#s14">14. Gouvernance</a></li>
+                <li><a href="#s15">15. Durée</a></li>
+                <li><a href="#s16">16. Signatures</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 muted">
+          Astuce : chaque section propose un bouton “Copier (FR)” et l’anglais source repliable pour comparaison.
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTIONS -->
+    <div id="sections" class="cardx p-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <h3 class="mb-0" style="font-weight:950;">Sections du SOW</h3>
+        <span class="pill ok">FR + EN source</span>
+      </div>
+
+      <div class="accordion mt-3" id="accSOW">
+
+        <%-
+          /*
+            DATA — contenu fidèle au docx.
+            Note: certaines lignes contiennent "..." dans le document original. On les conserve.
+          */
+        -%>
+        <%
+          const SOW = [
+            {
+              id: 's1',
+              title: '1. OBJET (Purpose)',
+              fr: [
+                'Le présent Statement of Work (« SOW ») définit le périmètre des services, les livrables, les phases de déploiement et les responsabilités dans le cadre du Système National de Surveillance Électronique pour la Police Nationale d’Haïti (PNH) (« Client »).',
+                'Ce SOW est fondé exclusivement sur la proposition Databox SA et la documentation de support, et n’inclut aucune obligation, garantie ou engagement qui ne serait pas expressément indiqué dans le présent document.'
+              ],
+              en: [
+                'This Statement of Work (“SOW”) defines the scope of services, ...illance System for the Haitian National Police (PNH) (“Client”).',
+                'This SOW is based exclusively on the Databox SA proposal and s...gations, guarantees, or commitments not expressly stated herein.'
+              ]
+            },
+            {
+              id: 's2',
+              title: '2. ORDRE DE PRIORITÉ (SOW Precedence)',
+              fr: [
+                'En cas de conflit ou d’incohérence, l’ordre de priorité suivant s’applique :',
+                '1) Master Services Agreement (MSA)',
+                '2) Service Level Agreement (SLA)',
+                '3) Le présent Statement of Work (SOW)',
+                '4) Toute proposition, présentation, livre blanc, ou document informatif',
+                'Seuls les documents ci-dessus sont contractuellement opposables.'
+              ],
+              en: [
+                'In the event of any conflict or inconsistency, the following order of precedence shall apply:',
+                'Master Services Agreement (MSA)',
+                'Service Level Agreement (SLA)',
+                'This Statement of Work (SOW)',
+                'All proposals, presentations, white papers, or informational documents',
+                'Only the documents above are contractually binding.'
+              ]
+            },
+            {
+              id: 's3',
+              title: '3. PÉRIMÈTRE DES TRAVAUX (In-Scope Services)',
+              fr: [
+                '3.1 Architecture Système',
+                'Databox SA livrera un système intégré composé des couches suivantes :',
+                '• Couche Terrain (dispositifs GPS, unités DashPC, tags RFID, terminaux mobiles)',
+                '• Couche Réseau (connectivité Starlink, APN privé, VPN, pare-feux)',
+                '• Couche Middleware (bus d’événements, moteur de règles, geofencing)',
+                '• Couche Données (PostgreSQL/PostGIS, Elasticsearch, TimescaleDB)',
+                '• Couche Applicative (plateforme Command & Control, application e-Police, APIs)',
+                'Le périmètre inclut uniquement la configuration et le déploiement. Le développement spécifique (sur-mesure) est exclu sauf autorisation expresse via Change Order.',
+                '',
+                '3.2 Déploiement des équipements (quantités fixes)',
+                'Les quantités suivantes constituent le périmètre maximal au titre du présent SOW :',
+                'Véhicules :',
+                '• 1 000 dispositifs GPS 4G câblés',
+                '• 1 000 dispositifs GPS OBD-II dissimulés',
+                '• 1 000 unités DashPC multi-canaux',
+                '• 1 000 tags RFID UHF',
+                'Infrastructure :',
+                '• Deux (2) centres nationaux de supervision (Port-au-Prince et Cap-Haïtien)',
+                '• Connectivité Starlink pour jusqu’à cinquante (50) commissariats',
+                'Toute augmentation de quantité ou extension des lieux de déploiement requiert un Change Order écrit.',
+                '',
+                '3.3 Plateformes logicielles fournies',
+                'Databox SA fournira l’accès aux plateformes suivantes :',
+                '• Plateforme Command & Control (C2)',
+                '• Application mobile e-Police (Android)',
+                '• Système de géomatique et géolocalisation Pega6',
+                '• Plateforme géospatiale JMap (via K2 Geospatial)',
+                'Le logiciel est fourni tel que configuré, et non personnalisé, sauf accord écrit contraire.'
+              ],
+              en: [
+                '3.1 System Architecture',
+                'Databox SA shall deliver an integrated system composed of the following layers:',
+                'Field Layer (GPS devices, DashPC units, RFID tags, mobile terminals)',
+                'Network Layer (Starlink connectivity, private APN, VPN, firewalls)',
+                'Middleware Layer (event bus, rules engine, geofencing)',
+                'Data Layer (PostgreSQL/PostGIS, Elasticsearch, TimescaleDB)',
+                'Application Layer (Command & Control platform, e-Police application, APIs)',
+                'The scope includes configuration and deployment only.\nCustom development is excluded unless expressly authorized via Change Order.',
+                '3.2 Equipment Deployment (Fixed Quantities)',
+                'The following quantities constitute the maximum scope under this SOW:',
+                'Vehicles',
+                '1,000 wired 4G GPS devices',
+                '1,000 covert OBD-II GPS devices',
+                '1,000 multi-channel DashPC units',
+                '1,000 UHF RFID tags',
+                'Infrastructure',
+                'Two (2) National Monitoring Data Centers (Port-au-Prince and Cap-Haïtien)',
+                'Starlink connectivity for up to fifty (50) police stations',
+                'Any increase in quantities or expansion of deployment locations requires a written Change Order.',
+                '3.3 Software Platforms Provided',
+                'Databox SA shall provide access to the following platforms:',
+                'Command & Control (C2) platform',
+                'e-Police mobile application (Android)',
+                'Pega6 Geomatics and Geolocation System',
+                'JMap geospatial platform (via K2 Geospatial)',
+                'Software is provided as configured, not customized, unless otherwise agreed in writing.'
+              ]
+            },
+            {
+              id: 's4',
+              title: '4. PHASES DE DÉPLOIEMENT (Deployment Phases)',
+              fr: [
+                'Le déploiement aura lieu selon les phases indicatives suivantes, sous réserve de la préparation du Client et de la disponibilité des tiers :',
+                '• Installation d’infrastructures provinciales (serveurs, Starlink, WiFi, LAN)',
+                '• Installation des Data Centers (PAP et CAP)',
+                '• Formation jusqu’à 500 agents PNH (installateurs, support, maintenance)',
+                '• Inventaire et enregistrement des véhicules, équipements et personnels',
+                '• Configuration logicielle et certification de compatibilité véhicules',
+                '• Procédures opérationnelles et activation de conformité',
+                '• Installation des tags RFID et déploiement DashPC',
+                '• Déploiement Pega6 sur terminaux mobiles',
+                '• Connectivité avec CONATEL, ONI, Immigration (sous réserve de disponibilité)',
+                '• Déploiement des services de cartographie et géolocalisation',
+                'Les dates sont indicatives et non contraignantes.'
+              ],
+              en: [
+                'Deployment shall occur in the following indicative phases, subject to Client readiness and third-party availability:',
+                'Provincial infrastructure installation (servers, Starlink, WiFi, LAN)',
+                'Data Center installation (PAP and CAP)',
+                'Training of up to 500 PNH agents (installers, support, maintenance)',
+                'Inventory and registration of vehicles, equipment, and personnel',
+                'Software configuration and vehicle compatibility certification',
+                'Operational procedures and compliance enablement',
+                'RFID tag installation and DashPC deployment',
+                'Pega6 deployment on mobile devices',
+                'Connectivity with CONATEL, ONI, Immigration (subject to availability)',
+                'Deployment of cartography and geolocation services',
+                'Dates are indicative and non-binding.'
+              ]
+            },
+            {
+              id: 's5',
+              title: '5. LIVRABLES (Deliverables)',
+              fr: [
+                'Les livrables incluent :',
+                '• Équipements GPS et DashPC installés (dans la limite des quantités définies)',
+                '• Capacité d’identification RFID fonctionnelle',
+                '• Plateforme nationale Command & Control opérationnelle',
+                '• Plateforme de visualisation géospatiale et analytique déployée',
+                '• Sessions de formation réalisées',
+                '• Centres de supervision accessibles et opérationnels',
+                'Aux fins du présent SOW, « Opérationnel » signifie : installé, accessible et transmettant des données.',
+                'Le statut opérationnel n’implique pas de résultats de performance, de niveau d’adoption, ni d’impact comportemental.'
+              ],
+              en: [
+                'Deliverables include:',
+                'Installed GPS and DashPC equipment (up to defined quantities)',
+                'Functional RFID identification capability',
+                'Operational national Command & Control platform',
+                'Deployed geospatial visualization and analytics platform',
+                'Training sessions delivered',
+                'Monitoring Centers accessible and operational',
+                'For purposes of this SOW, “Operational” means installed, accessible, and transmitting data.\nOperational status does not imply performance outcomes, adoption levels, or behavioral impact.'
+              ]
+            },
+            {
+              id: 's6',
+              title: '6. ACCEPTATION (Acceptance)',
+              fr: [
+                '6.1 Critères d’acceptation',
+                'Un livrable est réputé accepté lorsque :',
+                '• Il est installé et accessible ; et',
+                '• Le Client ne soumet pas de rejet écrit dans un délai de quinze (15) jours ouvrables après livraison.',
+                '',
+                '6.2 Standards de rejet',
+                'Tout rejet doit :',
+                '• Être formulé par écrit ;',
+                '• Identifier une non-conformité spécifique et objective au présent SOW ;',
+                'Les rejets ne peuvent pas être basés sur des préférences, opinions subjectives, résultats opérationnels, ou la performance de systèmes tiers.',
+                'L’absence de réponse dans le délai d’acceptation vaut acceptation.'
+              ],
+              en: [
+                '6. ACCEPTANCE',
+                '6.1 Acceptance Criteria',
+                'A deliverable shall be deemed accepted when:',
+                'It is installed and accessible; and',
+                'The Client does not submit a written rejection within fifteen (15) business days of delivery.',
+                '6.2 Rejection Standards',
+                'Any rejection must:',
+                'Be in writing',
+                'Identify specific, objective non-conformance to this SOW',
+                'Rejections may not be based on preferences, subjective opinions, operational outcomes, or third-party system performance.',
+                'Failure to respond within the acceptance period constitutes acceptance.'
+              ]
+            },
+            {
+              id: 's7',
+              title: '7. GESTION DES CHANGEMENTS (Change Management)',
+              fr: [
+                'Tout travail en dehors du périmètre du présent SOW requiert un Change Order écrit, signé par les deux parties.',
+                'Les Change Orders peuvent modifier :',
+                '• Périmètre',
+                '• Calendrier',
+                '• Prix',
+                '• Ressources',
+                'Databox SA n’a aucune obligation d’exécuter des travaux additionnels sans Change Order signé.'
+              ],
+              en: [
+                'Any work outside the scope of this SOW requires a written Change Order executed by both parties.',
+                'Change Orders may modify:',
+                'Scope',
+                'Schedule',
+                'Pricing',
+                'Resources',
+                'Databox SA has no obligation to perform additional work without an executed Change Order.'
+              ]
+            },
+            {
+              id: 's8',
+              title: '8. DÉPENDANCES CLIENT (Client Dependencies)',
+              fr: [
+                'Le Client est responsable de :',
+                '• Fournir l’accès aux véhicules, installations et sites',
+                '• Assurer la disponibilité du personnel pour la formation',
+                '• Faciliter la coopération de CONATEL, ONI, Immigration et autres agences',
+                '• Assurer la disponibilité de l’alimentation électrique et de la connectivité réseau',
+                'Databox SA n’est pas responsable des retards, échecs ou impacts de service résultant de dépendances non satisfaites.',
+                'Les métriques SLA sont suspendues pendant ces périodes.'
+              ],
+              en: [
+                'The Client is responsible for:',
+                'Providing access to vehicles, facilities, and sites',
+                'Ensuring availability of personnel for training',
+                'Facilitating cooperation from CONATEL, ONI, Immigration, and other agencies',
+                'Ensuring availability of power and network connectivity',
+                'Databox SA shall not be responsible for delays, failures, or service impacts resulting from unmet dependencies.\nSLA metrics are suspended during such periods.'
+              ]
+            },
+            {
+              id: 's9',
+              title: '9. FORMATION (Training)',
+              fr: [
+                'La formation inclut :',
+                '• Un (1) cycle initial de formation',
+                '• Jusqu’à 500 agents PNH désignés',
+                '• Modèle “train-the-trainer” (formation des formateurs)',
+                'Toute formation additionnelle, re-formation ou session de rappel est hors périmètre et facturable.'
+              ],
+              en: [
+                'Training includes:',
+                'One (1) initial training cycle',
+                'Up to 500 designated PNH agents',
+                'Train-the-trainer model',
+                'Additional training, retraining, or refresh sessions are out of scope and billable.'
+              ]
+            },
+            {
+              id: 's10',
+              title: '10. CONDITIONS COMMERCIALES (Commercial Terms)',
+              fr: [
+                '10.1 Frais',
+                'Coût total estimatif au titre du présent SOW : USD $2,665,000.00',
+                '',
+                '10.2 Coûts exclus',
+                'Les coûts suivants sont expressément exclus :',
+                '• Voyages',
+                '• Hôtel',
+                '• Per diem',
+                '• Génie civil',
+                '• Coûts d’agences tierces'
+              ],
+              en: [
+                '10. COMMERCIAL TERMS',
+                '10.1 Fees',
+                'Total estimated cost under this SOW: USD $2,665,000.00',
+                '10.2 Excluded Costs',
+                'The following costs are expressly excluded:',
+                'Travel',
+                'Hotel',
+                'Per diem',
+                'Civil engineering',
+                'Third-party agency costs'
+              ]
+            },
+            {
+              id: 's11',
+              title: '11. LIMITES DE SUPPORT (Support Boundary)',
+              fr: [
+                'Les services de support, engagements de disponibilité (uptime), délais de réponse et de maintenance sont régis exclusivement par le SLA et démarrent uniquement après acceptation des livrables.'
+              ],
+              en: [
+                'Support services, uptime commitments, response times, and ma...y by the SLA and commence only after acceptance of deliverables.'
+              ]
+            },
+            {
+              id: 's12',
+              title: '12. ABSENCE DE GARANTIES (Non-Guarantees)',
+              fr: [
+                'Databox SA ne garantit pas :',
+                '• La réduction de la criminalité',
+                '• Des résultats comportementaux ou disciplinaires',
+                '• Les taux d’adoption',
+                '• Des résultats sur la confiance du public',
+                '• L’exactitude des sources de données tierces',
+                'Toute déclaration de ce type constitue uniquement des objectifs non contractuels.'
+              ],
+              en: [
+                'Databox SA does not guarantee:',
+                'Crime reduction',
+                'Behavioral or disciplinary outcomes',
+                'Adoption rates',
+                'Public trust outcomes',
+                'Accuracy of third-party data sources',
+                'Any such statements are non-contractual objectives only.'
+              ]
+            },
+            {
+              id: 's13',
+              title: '13. HORS PÉRIMÈTRE (Out-of-Scope)',
+              fr: [
+                'Sont hors périmètre, notamment et sans limitation :',
+                '• Développement logiciel sur-mesure',
+                '• Migration de données',
+                '• Décommissionnement de systèmes hérités',
+                '• Ajustements analytiques au-delà de la configuration',
+                '• Déterminations d’admissibilité juridique (preuve)',
+                '• Remplacement des terminaux/utilisateurs finaux',
+                'Tout élément non explicitement indiqué comme “in scope” est exclu.'
+              ],
+              en: [
+                'Out of scope includes, without limitation:',
+                'Custom software development',
+                'Data migration',
+                'Legacy system decommissioning',
+                'Analytics tuning beyond configuration',
+                'Legal admissibility determinations',
+                'End-user device replacement',
+                'Anything not expressly stated as in scope is excluded.'
+              ]
+            },
+            {
+              id: 's14',
+              title: '14. GOUVERNANCE (Governance)',
+              fr: [
+                'Le Client désigne un représentant unique, autorisé, ayant pouvoir de donner des instructions et validations.',
+                'Databox SA n’est pas responsable des retards, reprises, ou conflits provenant d’instructions non autorisées ou incohérentes.'
+              ],
+              en: [
+                'The Client shall designate a single authorized representative with authority to provide instructions and approvals.',
+                'Databox SA is not responsible for delays, rework, or conflicts arising from unauthorized or inconsistent directives.'
+              ]
+            },
+            {
+              id: 's15',
+              title: '15. DURÉE (Term)',
+              fr: [
+                'Le présent SOW entre en vigueur à la date de signature et demeure en vigueur pour la durée de l’Accord, sauf résiliation conformément au MSA.'
+              ],
+              en: [
+                'This SOW becomes effective upon execution and remains in for...n of the Agreement unless terminated in accordance with the MSA.'
+              ]
+            },
+            {
+              id: 's16',
+              title: '16. SIGNATURES (Signatures)',
+              fr: [
+                'Approuvé et accepté :',
+                'Pour la Police Nationale d’Haïti (PNH)',
+                'Nom :',
+                'Titre :',
+                'Signature :',
+                'Date :',
+                '',
+                'Pour Databox SA',
+                'Nom :',
+                'Titre :',
+                'Signature :',
+                'Date :'
+              ],
+              en: [
+                'Agreed and accepted:',
+                'For the Haitian National Police (PNH)\nName:\nTitle:\nSignature:\nDate:',
+                'For Databox SA\nName:\nTitle:\nSignature:\nDate:'
+              ]
+            },
+          ];
+        %>
+
+        <% SOW.forEach((sec, idx) => { %>
+          <div class="accordion-item" id="<%= sec.id %>">
+            <h2 class="accordion-header">
+              <button class="accordion-button <%= idx === 0 ? '' : 'collapsed' %>" type="button"
+                      data-bs-toggle="collapse" data-bs-target="#c_<%= sec.id %>">
+                <span style="flex:1;"><%= sec.title %></span>
+                <span class="pill ms-2">Section <%= (idx+1) %>/<%= SOW.length %></span>
+              </button>
+            </h2>
+
+            <div id="c_<%= sec.id %>" class="accordion-collapse collapse <%= idx === 0 ? 'show' : '' %>" data-bs-parent="#accSOW">
+              <div class="accordion-body">
+                <div class="copybar">
+                  <button class="btn btn-sm btn-outline-light" onclick="copySectionFR('<%= sec.id %>')">Copier (FR)</button>
+                  <button class="btn btn-sm btn-outline-light" onclick="toggleEN('<%= sec.id %>')">Afficher/Masquer EN</button>
+                  <a class="btn btn-sm btn-outline-light" href="#toc">Sommaire</a>
+                </div>
+
+                <div class="section-block">
+                  <div class="muted" style="font-weight:900;">Texte (FR)</div>
+                  <div class="mt-2 mono" id="fr_<%= sec.id %>"><%= sec.fr.join('\n') %></div>
+                </div>
+
+                <div class="mt-3 section-block" id="enwrap_<%= sec.id %>" style="display:none;">
+                  <div class="muted" style="font-weight:900;">Source (EN — tel que dans le document)</div>
+                  <div class="mt-2 mono"><%= sec.en.join('\n') %></div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        <% }) %>
+
+      </div>
+    </div>
+
+    <div class="footer mt-4">
+      <div class="container d-flex flex-wrap gap-2 justify-content-between align-items-center">
+        <div>© <%= new Date().getFullYear() %> Databox SA — SOW PNH (page responsive)</div>
+        <div class="d-flex gap-2 flex-wrap">
+          <span class="pill ok">Copie FR</span>
+          <span class="pill">EN source repliable</span>
+          <span class="pill warn">Impression → PDF</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function scrollToEl(sel){
+      const el = document.querySelector(sel);
+      if(!el) return;
+      el.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    async function copyText(txt){
+      try{
+        await navigator.clipboard.writeText(txt);
+        toast("Copié ✅");
+      }catch(e){
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        toast("Copié (compatibilité) ✅");
+      }
+    }
+
+    function getFR(id){
+      const el = document.getElementById('fr_'+id);
+      return el ? el.textContent : '';
+    }
+
+    function copySectionFR(id){
+      const txt = getFR(id);
+      copyText(txt);
+    }
+
+    function copyAllFR(){
+      const blocks = Array.from(document.querySelectorAll('[id^="fr_"]')).map(x => x.textContent);
+      copyText(blocks.join("\n\n---\n\n"));
+    }
+
+    function toggleEN(id){
+      const w = document.getElementById('enwrap_'+id);
+      if(!w) return;
+      w.style.display = (w.style.display === 'none' || !w.style.display) ? 'block' : 'none';
+    }
+
+    function toggleAllEN(){
+      const wraps = Array.from(document.querySelectorAll('[id^="enwrap_"]'));
+      const anyHidden = wraps.some(w => (w.style.display === 'none' || !w.style.display));
+      wraps.forEach(w => w.style.display = anyHidden ? 'block' : 'none');
+      toast(anyHidden ? "EN affiché" : "EN masqué");
+    }
+
+    // mini toast
+    let toastTimer = null;
+    function toast(msg){
+      let t = document.getElementById('toastBox');
+      if(!t){
+        t = document.createElement('div');
+        t.id = 'toastBox';
+        t.style.position='fixed';
+        t.style.right='16px';
+        t.style.top='82px';
+        t.style.zIndex='9999';
+        t.style.padding='10px 12px';
+        t.style.border='1px solid rgba(255,255,255,.16)';
+        t.style.borderRadius='14px';
+        t.style.background='rgba(0,0,0,.55)';
+        t.style.color='rgba(233,242,255,.92)';
+        t.style.backdropFilter='blur(10px)';
+        t.style.boxShadow='0 14px 30px rgba(0,0,0,.25)';
+        t.style.maxWidth='320px';
+        t.style.fontWeight='800';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity='1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>{ t.style.opacity='0'; }, 2200);
+    }
+  </script>
+</body>
+</html>

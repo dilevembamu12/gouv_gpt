@@ -1,0 +1,42 @@
+# --- Dependencies ---
+node_modules/
+
+# --- Environment Secrets ---
+.env
+js/.env
+
+# --- Runtime Data & Storage ---
+# Uploads directory created by gouvgpt.js
+uploads/
+
+# Local JSON "databases" (modified at runtime)
+# Based on code: public/data stores rooms.json and personas.config.json
+public/data/
+# Based on tree: root data folder containing audit.json
+data/
+
+# --- Logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Backup & Temporary Files ---
+# Matches gouvgpt.js.bak
+*.bak
+# Matches certificates.js.bak.20251231...
+*.bak.*
+# Matches "gouvgpt - copy.ejs"
+*- copy.ejs
+* - copy.ejs
+
+# --- Test Artifacts (from root) ---
+test.pdf
+test.txt
+
+# --- OS & Editor Configs ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

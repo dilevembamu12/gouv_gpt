@@ -1,0 +1,479 @@
+<%- /* invite.ejs — Invitation Réunion Client (POLNA) — Mobile-first, responsive
+    Date courante (contexte): Lundi 5 janv 2026 (America/New_York)
+    "mardi demain" => Mardi 6 janvier 2026 à 15h00
+    Adresse confirmée: 14501 Hotel Rd, Miramar, FL 33027 (Hilton Garden Inn Ft. Lauderdale SW/Miramar)
+    Google Meet: https://meet.google.com/rwx-ojvi-xzh
+*/ -%>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invitation — Réunion POLNA | 15h</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#06101c; --bg1:#0a1a2e;
+      --card: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.12);
+      --text:#eaf2ff; --muted:#b9c7dd;
+      --accent:#27d3a2; --accent2:#5aa8ff; --warn:#ffcf5a;
+      --shadow: 0 18px 50px rgba(0,0,0,.38);
+      --radius: 18px;
+    }
+
+    body{
+      background:
+        radial-gradient(1100px 700px at 10% 10%, rgba(90,168,255,.22), transparent 60%),
+        radial-gradient(900px 600px at 85% 25%, rgba(39,211,162,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .nav-glass{
+      position: sticky; top:0; z-index:10;
+      backdrop-filter: blur(10px);
+      background: rgba(6,16,28,.65);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand{
+      display:flex; align-items:center; gap:.6rem;
+      font-weight: 950; letter-spacing:.2px;
+    }
+    .dot{
+      width: 12px; height: 12px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 4px rgba(39,211,162,.14);
+    }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:.45rem;
+      padding:.35rem .65rem;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(233,242,255,.92);
+      font-size: .85rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .pill.ok{ background: rgba(39,211,162,.12); border-color: rgba(39,211,162,.25); color:#c9fff0; }
+    .pill.warn{ background: rgba(255,207,90,.12); border-color: rgba(255,207,90,.25); color:#fff2cc; }
+
+    .cardx{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .cardx-header{
+      padding: 1.25rem 1.25rem 1rem 1.25rem;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(800px 300px at 10% 0%, rgba(90,168,255,.18), transparent 70%),
+        radial-gradient(800px 300px at 90% 0%, rgba(39,211,162,.16), transparent 70%),
+        rgba(0,0,0,.16);
+    }
+    .cardx-body{ padding: 1.15rem 1.25rem 1.25rem 1.25rem; color: var(--muted); }
+
+    .hero-title{
+      font-weight: 980;
+      letter-spacing: .2px;
+      margin: .7rem 0 .3rem 0;
+      line-height: 1.12;
+    }
+    .hero-sub{ color: rgba(233,242,255,.78); margin: 0; }
+
+    .btn-cta{
+      border:0;
+      border-radius: 14px;
+      padding: .9rem 1.05rem;
+      font-weight: 950;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    .btn-primary-cta{
+      background: linear-gradient(135deg, var(--accent), #16b88c);
+      color: #062018;
+    }
+    .btn-ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      color: var(--text);
+      border-radius: 14px;
+      padding: .9rem 1.05rem;
+      font-weight: 950;
+    }
+    .btn-ghost:hover{ background: rgba(255,255,255,.10); }
+
+    .action-row{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:.6rem;
+    }
+    @media (min-width: 992px){
+      .action-row{ grid-template-columns: 1fr 1fr; }
+    }
+
+    .info-grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    @media (min-width: 992px){
+      .info-grid{ grid-template-columns: 1.2fr .8fr; }
+    }
+
+    .block{
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius: 14px;
+      padding: .95rem 1rem;
+      background: rgba(0,0,0,.12);
+    }
+
+    .agenda-item{
+      border:1px dashed rgba(255,255,255,.16);
+      border-radius: 14px;
+      padding: .95rem 1rem;
+      background: rgba(0,0,0,.12);
+      margin-bottom: .75rem;
+    }
+    .agenda-item h6{ margin:0 0 .25rem 0; font-weight: 980; color: var(--text); }
+    .agenda-item .meta{ color: rgba(233,242,255,.74); font-weight: 900; }
+    .agenda-item ul{ margin:.45rem 0 0 0; padding-left: 1.1rem; }
+    .agenda-item li{ margin: .25rem 0; }
+
+    .small-muted{ color: rgba(233,242,255,.70); font-size: .95rem; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+
+    .meet-link{
+      display:flex; gap:.6rem; align-items:flex-start; justify-content:space-between;
+      padding:.8rem .9rem;
+      border-radius: 14px;
+      border:1px solid rgba(90,168,255,.22);
+      background: rgba(90,168,255,.10);
+    }
+    .meet-link a{ color: rgba(233,242,255,.95); text-decoration: none; font-weight: 950; }
+    .meet-link a:hover{ text-decoration: underline; }
+    .meet-icon{
+      width: 34px; height: 34px; border-radius: 12px;
+      background: rgba(39,211,162,.14);
+      border: 1px solid rgba(39,211,162,.25);
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 980;
+      color: #c9fff0;
+      flex: 0 0 auto;
+    }
+
+    .footer{
+      position: sticky;
+      bottom: 0;
+      border-top: 1px solid var(--line);
+      background: rgba(6,16,28,.72);
+      backdrop-filter: blur(10px);
+      padding: .7rem 0;
+      color: rgba(233,242,255,.78);
+    }
+
+    @media print{
+      body{ background:#fff !important; color:#111 !important; }
+      .nav-glass, .footer, .print-hide, .pill, .btn { display:none !important; }
+      .cardx{ box-shadow:none !important; background:#fff !important; border-color:#ddd !important; }
+      .cardx-body{ color:#222 !important; }
+      .agenda-item, .block{ border-color:#bbb !important; background:#fff !important; }
+      .hero-sub, .small-muted{ color:#333 !important; }
+      .meet-link{ border-color:#bbb !important; background:#fff !important; }
+      .meet-link a{ color:#111 !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="nav-glass">
+    <div class="container py-3 d-flex align-items-center justify-content-between gap-2">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>Invitation Réunion Client</span>
+        <span class="pill ok">Tout est prêt</span>
+      </div>
+      <div class="d-flex gap-2 flex-wrap justify-content-end print-hide">
+        <button class="btn btn-sm btn-outline-light" onclick="scrollToEl('#agenda')">Agenda</button>
+        <button class="btn btn-sm btn-outline-light" onclick="scrollToEl('#lieu')">Lieu</button>
+        <button class="btn btn-sm btn-outline-light" onclick="window.print()">Imprimer / PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container my-4">
+
+    <div class="cardx mb-4">
+      <div class="cardx-header">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+          <div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <span class="pill">Réunion de cadrage</span>
+              <span class="pill warn">Décisionnel</span>
+            </div>
+            <h1 class="hero-title">
+              Mardi 6 janvier 2026 • <span class="mono">15:00</span>
+            </h1>
+            <p class="hero-sub">
+              Présentation du Projet Pega6 POLNA • Alignement • Due diligence • Budgets & financement • SOW / SLA / MOU • Phase 1
+            </p>
+          </div>
+
+          <div class="text-end">
+            <div class="pill">Durée : 2h05</div><br/>
+
+            <div class="pill warn mb-2">Lieu</div>
+            <div style="font-weight: 980; color: var(--text);">
+              Hilton Garden Inn Ft. Lauderdale SW/Miramar
+            </div>
+            <div class="small-muted mt-1">
+              14501 Hotel Rd, Miramar, FL 33027
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cardx-body">
+        <div class="info-grid">
+          <div>
+            <div class="block">
+              <div class="pill ok mb-2">Objectif</div>
+              <div class="small-muted">
+                Sortir de la réunion avec un <strong>plan clair</strong> : attentes validées, due diligence cadrée (périmètre + budget),
+                jalons de paiement alignés, et une définition précise de la <strong>Phase 1</strong>.
+              </div>
+            </div>
+
+            <div class="mt-3 block">
+              <div class="pill mb-2">Participants (à compléter)</div>
+              <div class="small-muted">
+                • Client : XXXXXXXXXX <br/>
+                • Databox SA : Direction, Chef de projet, Responsable technique, Logistique &amp; Contrats
+              </div>
+            </div>
+
+            <div class="mt-3 meet-link">
+              <div class="d-flex gap-3">
+                <div class="meet-icon">M</div>
+                <div>
+                  <div style="font-weight:980; color: var(--text);">Option visio — Google Meet</div>
+                  <div class="small-muted mt-1">
+                    <a href="https://meet.google.com/rwx-ojvi-xzh" target="_blank" rel="noopener">meet.google.com/rwx-ojvi-xzh</a>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-outline-light" onclick="copyMeet()">Copier</button>
+            </div>
+          </div>
+
+          <div id="lieu">
+            <div class="block">
+              <div class="pill warn mb-2">Lieu</div>
+              <div style="font-weight: 980; color: var(--text);">
+                Hilton Garden Inn Ft. Lauderdale SW/Miramar
+              </div>
+              <div class="small-muted mt-1">
+                14501 Hotel Rd, Miramar, FL 33027
+              </div>
+
+              <div class="action-row mt-3 print-hide">
+                <button class="btn-cta btn-primary-cta w-100" onclick="openMaps()">
+                  Ouvrir l’itinéraire
+                </button>
+
+                <button class="btn-ghost w-100" onclick="joinMeet()">
+                  Rejoindre Google Meet
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-light opacity-25 my-4"/>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="cardx" id="agenda">
+      <div class="cardx-header">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h3 class="mb-0" style="font-weight: 980;">Agenda (15h00 → 17h05)</h3>
+            <div class="small-muted mt-1">
+              Format : 6 blocs • Focus : décisions, cadrage, jalons, documents
+            </div>
+          </div>
+          <span class="pill ok">Tout est prêt</span>
+        </div>
+      </div>
+
+      <div class="cardx-body">
+        <div class="agenda-item">
+          <h6>1) Présentation initiale</h6>
+          <div class="meta">15 minutes</div>
+          <ul>
+            <li>Présenter notre expertise</li>
+            <li>Présenter notre équipe</li>
+            <li>Présenter notre business acumen</li>
+          </ul>
+        </div>
+
+        <div class="agenda-item">
+          <h6>2) Alignement des attentes &amp; Due diligence</h6>
+          <div class="meta">30 minutes</div>
+          <ul>
+            <li>Matching expectations</li>
+            <li>Q&amp;A sur le client</li>
+            <li>Due diligence des exigences POLNA : flotte, maturité tech, RH, hiérarchie/contrôle, culture de messagerie digitale, GPS existant</li>
+            <li>Besoin d’un <strong>budget “need assessment”</strong> pour la phase de due diligence ?</li>
+            <li>Deadlines</li>
+          </ul>
+        </div>
+
+        <div class="agenda-item">
+          <h6>3) Budgets &amp; mécanisme de financement</h6>
+          <div class="meta">60 minutes</div>
+          <ul>
+            <li>Budgets finaux</li>
+            <li>Mécanisme de financement</li>
+            <li>Garanties</li>
+            <li>Jalons de paiement (payment milestones)</li>
+          </ul>
+        </div>
+
+        <div class="agenda-item">
+          <h6>4) SOW — Cadrage du périmètre</h6>
+          <div class="meta">5 minutes</div>
+          <ul>
+            <li>Définir le scope of work</li>
+            <li>Définir les inclusions</li>
+            <li>Définir les exclusions</li>
+            <li>Logiciel</li>
+            <li>Infrastructure</li>
+            <li>Transfert de technologie</li>
+            <li>Exigences équipe locale</li>
+            <li>Matrice de responsabilité</li>
+            <li>Support niveau 1</li>
+            <li>Support niveau 2</li>
+            <li>SLA</li>
+          </ul>
+        </div>
+
+        <div class="agenda-item">
+          <h6>5) SLA &amp; MOU — Accords de principe</h6>
+          <div class="meta">10 minutes</div>
+          <ul>
+            <li>Conditions générales</li>
+            <li>Termes de référence</li>
+            <li>Accorder la due diligence</li>
+            <li>Accorder la phase 1</li>
+            <li>Accorder les phases 2, 3, 4, ?</li>
+          </ul>
+        </div>
+
+        <div class="agenda-item mb-0">
+          <h6>6) Définition Phase 1</h6>
+          <div class="meta">5 minutes</div>
+          <ul>
+            <li>Logiciel + <em>xxx</em> véhicules</li>
+            <li>On-boarding RH ePolice</li>
+            <li>Pega6 : inventaire véhicules</li>
+            <li>Training</li>
+            <li>Ship modular datacenter (container)</li>
+            <li>Technology transfer</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer print-hide">
+    <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>Databox SA — Réunion POLNA • Mardi 6 janv 2026 • 15h00</div>
+      <div class="d-flex gap-2 flex-wrap">
+        <span class="pill ok">Adresse confirmée</span>
+        <span class="pill warn">14501 Hotel Rd, Miramar</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MEETING = {
+      title: "Réunion client — POLNA (Databox SA)",
+      locationName: "Hilton Garden Inn Ft. Lauderdale SW/Miramar",
+      address: "14501 Hotel Rd, Miramar, FL 33027",
+      meetUrl: "https://meet.google.com/rwx-ojvi-xzh"
+    };
+
+    function scrollToEl(sel){
+      const el = document.querySelector(sel);
+      if(!el) return;
+      el.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+
+    function openMaps(){
+      const q = encodeURIComponent(`${MEETING.locationName}, ${MEETING.address}`);
+      const url = `https://www.google.com/maps/search/?api=1&query=${q}`;
+      window.open(url, '_blank', 'noopener');
+    }
+
+    function joinMeet(){
+      window.open(MEETING.meetUrl, '_blank', 'noopener');
+    }
+
+    async function copyText(txt){
+      try{
+        await navigator.clipboard.writeText(txt);
+        toast("Copié ✅");
+      }catch(e){
+        const ta = document.createElement('textarea');
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        toast("Copié (compatibilité) ✅");
+      }
+    }
+
+    function copyMeet(){ copyText(MEETING.meetUrl); }
+
+    // toast
+    let toastTimer = null;
+    function toast(msg){
+      let t = document.getElementById('toastBox');
+      if(!t){
+        t = document.createElement('div');
+        t.id = 'toastBox';
+        t.style.position='fixed';
+        t.style.right='16px';
+        t.style.top='82px';
+        t.style.zIndex='9999';
+        t.style.padding='10px 12px';
+        t.style.border='1px solid rgba(255,255,255,.16)';
+        t.style.borderRadius='14px';
+        t.style.background='rgba(0,0,0,.55)';
+        t.style.color='rgba(233,242,255,.92)';
+        t.style.backdropFilter='blur(10px)';
+        t.style.boxShadow='0 14px 30px rgba(0,0,0,.25)';
+        t.style.maxWidth='360px';
+        t.style.fontWeight='950';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity='1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>{ t.style.opacity='0'; }, 2200);
+    }
+  </script>
+</body>
+</html>

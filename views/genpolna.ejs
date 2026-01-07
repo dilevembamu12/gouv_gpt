@@ -1,0 +1,978 @@
+<%- /* polna1.ejs — Pitch Produit (FR) + Générateur Pitch + Générateur MOU
+    - Objectif: page de présentation "one-page + deck" pour convaincre un client institutionnel (ex: PNH)
+    - Style: moderne, clair, orienté décision & ROI, avec boutons d'action bien visibles
+*/ -%>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=5" />
+  <title>POLNA — Pitch Produit (Databox)</title>
+
+  <!-- Bootstrap (si ton projet l'a déjà, tu peux enlever ces 2 lignes) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg0:#07121f;
+      --bg1:#0b1e34;
+      --card:#0f2946;
+      --card2:#0b223c;
+      --text:#eaf2ff;
+      --muted:#b9c7dd;
+      --accent:#27d3a2;
+      --accent2:#5aa8ff;
+      --warn:#ffcf5a;
+      --danger:#ff5a7a;
+      --line: rgba(255,255,255,.12);
+      --shadow: 0 18px 50px rgba(0,0,0,.35);
+      --radius: 18px;
+    }
+
+    body{
+      background: radial-gradient(1100px 700px at 10% 10%, rgba(90,168,255,.25), transparent 60%),
+                  radial-gradient(900px 600px at 85% 25%, rgba(39,211,162,.20), transparent 60%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .nav-glass{
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(7,18,31,.85);
+      border-bottom: 1px solid var(--line);
+      padding: 0.5rem 0;
+    }
+
+    .nav-glass .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .brand-badge{
+      display:flex; gap:.65rem; align-items:center;
+      font-weight: 800; letter-spacing:.3px;
+      font-size: 1.1rem;
+    }
+    .brand-dot{
+      width: 12px; height: 12px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 4px rgba(39,211,162,.14);
+      flex-shrink: 0;
+    }
+
+    .hero{
+      padding: 1.5rem 0 1rem 0;
+    }
+
+    .hero-card{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(15,41,70,.92), rgba(11,34,60,.88));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      margin: 0 0.75rem;
+    }
+
+    .hero-top{
+      padding: 1.5rem 1.25rem 1rem 1.25rem;
+      background:
+        radial-gradient(800px 300px at 10% 0%, rgba(90,168,255,.20), transparent 70%),
+        radial-gradient(800px 300px at 90% 0%, rgba(39,211,162,.16), transparent 70%);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero-top h1 {
+      font-size: 1.75rem;
+      font-weight: 900;
+      letter-spacing: 0.2px;
+      line-height: 1.2;
+      margin: 0.75rem 0;
+    }
+
+    .kpis{
+      display:flex; flex-wrap:wrap; gap:.5rem;
+      margin-top: 1rem;
+    }
+    .kpi{
+      padding:.6rem .75rem;
+      border-radius: 12px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size: .9rem;
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+    .kpi strong{ 
+      color: var(--text);
+      font-size: 1.1rem;
+      display: block;
+      margin-bottom: 0.1rem;
+    }
+
+    .hero-actions{
+      padding: 1rem 1.25rem;
+      display:flex; flex-wrap:wrap; gap:.5rem;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .btn-cta{
+      border:0;
+      border-radius: 14px;
+      padding: .75rem 1rem;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+      font-size: 0.95rem;
+      flex: 1;
+      min-width: 140px;
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .btn-cta:active {
+      transform: translateY(2px);
+      box-shadow: 0 5px 12px rgba(0,0,0,.2);
+    }
+    
+    .btn-primary-cta{
+      background: linear-gradient(135deg, var(--accent), #16b88c);
+      color: #062018;
+    }
+    .btn-secondary-cta{
+      background: linear-gradient(135deg, rgba(90,168,255,.95), rgba(39,211,162,.65));
+      color: #07121f;
+    }
+    .btn-ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      color: var(--text);
+    }
+    .btn-ghost:hover{ background: rgba(255,255,255,.10); }
+
+    .section{
+      padding: 1rem 0;
+    }
+
+    .container {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    .cardx{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.04);
+      box-shadow: 0 14px 35px rgba(0,0,0,.25);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .cardx .card-headerx{
+      padding: 1rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
+      display:flex; flex-direction: column; gap:.5rem;
+    }
+    .cardx .card-bodyx{
+      padding: 1rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .title{
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .subtitle{
+      margin: .25rem 0 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:.4rem;
+      padding:.35rem .65rem;
+      border-radius: 999px;
+      background: rgba(39,211,162,.12);
+      border: 1px solid rgba(39,211,162,.25);
+      color: #c9fff0;
+      font-size: .85rem;
+      font-weight: 700;
+      white-space: nowrap;
+      align-self: flex-start;
+    }
+    .pill.blue{
+      background: rgba(90,168,255,.12);
+      border: 1px solid rgba(90,168,255,.25);
+      color: #d6ecff;
+    }
+    .pill.warn{
+      background: rgba(255,207,90,.12);
+      border: 1px solid rgba(255,207,90,.25);
+      color: #fff2cc;
+    }
+
+    .grid-2{
+      display:grid;
+      grid-template-columns: repeat(1, 1fr);
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .grid-2{
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      .col-6{ grid-column: span 1; }
+      .col-7{ grid-column: span 2; }
+      .col-5{ grid-column: span 1; }
+      .col-12{ grid-column: span 2; }
+      
+      .hero-card {
+        margin: 0;
+      }
+      
+      .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+      
+      .hero {
+        padding: 2.2rem 0 1rem 0;
+      }
+      
+      .hero-top {
+        padding: 2rem 2rem 1.35rem 2rem;
+      }
+      
+      .hero-top h1 {
+        font-size: 2.25rem;
+      }
+      
+      .cardx .card-headerx {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      
+      .hero-actions {
+        padding: 1rem 2rem 1.4rem 2rem;
+        gap: .75rem;
+      }
+      
+      .btn-cta {
+        flex: none;
+        min-width: auto;
+      }
+    }
+
+    @media (min-width: 992px) {
+      .grid-2{
+        grid-template-columns: repeat(12, 1fr);
+      }
+      .col-6{ grid-column: span 6; }
+      .col-7{ grid-column: span 7; }
+      .col-5{ grid-column: span 5; }
+      .col-12{ grid-column: span 12; }
+      
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-left: 2rem;
+        padding-right: 2rem;
+      }
+    }
+
+    .list-clean{
+      margin:0; padding-left: 1.05rem;
+    }
+    .list-clean li{ 
+      margin: .35rem 0;
+      line-height: 1.5;
+    }
+
+    .scenario{
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius: 14px;
+      padding: .9rem .95rem;
+      background: rgba(0,0,0,.18);
+      margin-bottom: .75rem;
+    }
+    .scenario h6{ 
+      margin:0 0 .35rem 0; 
+      font-weight: 800; 
+      color: var(--text);
+      font-size: 1rem;
+    }
+    .scenario p{ 
+      margin:0; 
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .form-control, .form-select{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.14);
+      color: var(--text);
+      border-radius: 12px;
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      min-height: 46px;
+    }
+    .form-control::placeholder{ color: rgba(233,242,255,.55); }
+    .form-control:focus, .form-select:focus{
+      box-shadow: 0 0 0 4px rgba(90,168,255,.18);
+      border-color: rgba(90,168,255,.45);
+    }
+
+    textarea.form-control{
+      min-height: 200px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: .92rem;
+      color: #eaf2ff;
+      line-height: 1.4;
+    }
+
+    .footer-ticker{
+      position: sticky;
+      bottom: 0;
+      z-index: 30;
+      border-top: 1px solid var(--line);
+      background: rgba(7,18,31,.85);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+    
+    .ticker-wrapper {
+      overflow: hidden;
+      position: relative;
+      width: 100%;
+    }
+    
+    .ticker{
+      white-space: nowrap;
+      display: inline-block;
+      padding: .65rem 0;
+      animation: scroll 22s linear infinite;
+      color: rgba(233,242,255,.82);
+      font-weight: 650;
+      font-size: 0.95rem;
+    }
+    
+    @keyframes scroll {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    
+    @media (max-width: 768px) {
+      .ticker {
+        animation: scroll 18s linear infinite;
+        font-size: 0.9rem;
+      }
+    }
+
+    .small-muted{ 
+      color: rgba(233,242,255,.65); 
+      font-size:.92rem;
+      line-height: 1.4;
+    }
+    .hrx{ 
+      height:1px; 
+      background: var(--line); 
+      margin: .9rem 0;
+    }
+
+    .badge-mini{
+      display:inline-block;
+      font-size: .78rem;
+      padding: .25rem .55rem;
+      border-radius: 999px;
+      border:1px solid var(--line);
+      color: rgba(233,242,255,.78);
+      background: rgba(255,255,255,.04);
+    }
+
+    .print-note{
+      display:none;
+    }
+
+    /* Navigation mobile améliorée */
+    .nav-buttons {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    
+    .nav-buttons::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .nav-buttons .btn {
+      white-space: nowrap;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.75rem;
+      flex-shrink: 0;
+    }
+
+    /* Amélioration de la lisibilité sur mobile */
+    p, li, .subtitle {
+      font-size: 1.05rem;
+    }
+
+    /* Optimisation des formulaires mobile */
+    .form-check-label {
+      font-size: 0.95rem;
+      line-height: 1.3;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-check {
+      margin-bottom: 0.4rem;
+    }
+
+    /* Mode impression -> style "propre PDF" */
+    @media print {
+      body{ background:#fff !important; color:#111 !important; }
+      .nav-glass, .footer-ticker, .hero-actions, .btn, .badge-mini { display:none !important; }
+      .cardx, .hero-card{ box-shadow:none !important; border-color:#ddd !important; background:#fff !important; }
+      .cardx .card-bodyx, .subtitle, .scenario p{ color:#222 !important; }
+      .title, h1, h2, h3, h4, h5, h6{ color:#000 !important; }
+      .pill{ border-color:#aaa !important; background:#f6f6f6 !important; color:#111 !important; }
+      .print-note{ display:block; margin: 0 0 12px 0; color:#444; }
+    }
+
+    /* Améliorations accessibilité et interactions tactiles */
+    @media (hover: none) {
+      .btn-cta:hover {
+        transform: none;
+      }
+      
+      .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 3px rgba(90,168,255,.3);
+      }
+    }
+
+    /* Optimisation des espacements mobile */
+    @media (max-width: 767px) {
+      .hero-actions {
+        flex-direction: column;
+      }
+      
+      .btn-cta {
+        width: 100%;
+        max-width: 280px;
+      }
+      
+      .kpi {
+        min-width: calc(50% - 0.5rem);
+        flex: 0 0 calc(50% - 0.5rem);
+      }
+      
+      .pill {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.55rem;
+      }
+      
+      .title {
+        font-size: 1.2rem;
+      }
+      
+      .subtitle {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- NAV -->
+  <div class="nav-glass">
+    <div class="container py-2 d-flex align-items-center justify-content-between">
+      <div class="brand-badge">
+        <span class="brand-dot"></span>
+        <span>POLNA</span>
+        <span class="badge-mini d-none d-md-inline-block">Pitch Produit</span>
+      </div>
+      <div class="nav-buttons">
+        <a class="btn btn-sm btn-outline-light" href="#pitch">Pitch</a>
+        <a class="btn btn-sm btn-outline-light" href="#modules">Modules</a>
+        <a class="btn btn-sm btn-outline-light" href="#scenarios">Scénarios IA</a>
+        <a class="btn btn-sm btn-outline-light" href="#generate">Générateur</a>
+        <a class="btn btn-sm btn-outline-light" href="#mou">MOU</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container hero">
+    <div class="hero-card">
+      <div class="hero-top">
+        <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
+          <div class="w-100">
+            <div class="pill blue">Databox SA • Sécurité • Traçabilité • Supervision</div>
+            <h1 class="mt-3 mb-2">
+              Police Fleet AI — <span style="color:var(--accent);">Savoir où sont vos agents.</span> Savoir qu'ils sont en sécurité.
+            </h1>
+            <p class="subtitle">
+              Une plateforme intelligente qui surveille, protège et renforce la capacité opérationnelle d'une force de police —
+              en croisant <strong>GPS</strong>, <strong>identité</strong> et <strong>communications</strong>, puis en détectant automatiquement les anomalies.
+            </p>
+
+            <div class="kpis">
+              <div class="kpi"><strong id="kpiVehicles">2 000</strong> véhicules</div>
+              <div class="kpi"><strong id="kpiOfficers">15 000</strong> agents</div>
+              <div class="kpi"><strong>1</strong> tableau de bord centralisé</div>
+              <div class="kpi">Alertes <strong>temps réel</strong></div>
+            </div>
+          </div>
+
+          <div class="w-100 w-md-auto text-start text-md-end mt-3 mt-md-0">
+            <div class="pill d-inline-block">Réponse opérationnelle en minutes</div>
+            <div class="pill warn mt-2 d-inline-block">Preuves + Audit + Chaîne de confiance</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA bien visibles, centrés (comme tu aimes) -->
+      <div class="hero-actions">
+        <button class="btn-cta btn-primary-cta" onclick="scrollToEl('#generate')">Générer le Pitch</button>
+        <button class="btn-cta btn-secondary-cta" onclick="window.print()">Imprimer / PDF</button>
+        <button class="btn-cta btn-ghost" onclick="scrollToEl('#mou')">Modèle MOU</button>
+        <button class="btn-cta btn-ghost" onclick="scrollToEl('#contact')">Contact</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container section" id="pitch">
+    <div class="grid-2">
+      <!-- Le reste du contenu reste identique jusqu'à la section Générateur Pitch -->
+      <div class="col-12" id="generate">
+        <div class="cardx">
+          <div class="card-headerx">
+            <div>
+              <h3 class="title">Générateur de Pitch (copiable)</h3>
+              <p class="subtitle">Renseigne les champs → clique "Générer" → copie/colle dans un email, une note officielle, ou un PDF.</p>
+            </div>
+            <span class="pill">Smart</span>
+          </div>
+          <div class="card-bodyx">
+            <div class="grid-2">
+              <div class="col-12 col-md-5">
+                <label class="form-label">Client final</label>
+                <input class="form-control mb-2" id="f_client" placeholder="Ex: Police Nationale d'Haïti (PNH)" value="Police Nationale d'Haïti (PNH)"/>
+
+                <label class="form-label">Pays / Ville</label>
+                <input class="form-control mb-2" id="f_location" placeholder="Ex: Haïti / Port-au-Prince" value="Haïti"/>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label">Véhicules</label>
+                    <input class="form-control" id="f_vehicles" placeholder="2000" value="2000"/>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">Agents</label>
+                    <input class="form-control" id="f_officers" placeholder="15000" value="15000"/>
+                  </div>
+                </div>
+
+                <label class="form-label">Objectif prioritaire</label>
+                <select class="form-select mb-2" id="f_objective">
+                  <option value="Sécuriser les agents et réduire le temps de réponse">Sécuriser les agents et réduire le temps de réponse</option>
+                  <option value="Renforcer la discipline de patrouille et la supervision">Renforcer la discipline de patrouille et la supervision</option>
+                  <option value="Améliorer les enquêtes via preuves et audit">Améliorer les enquêtes via preuves et audit</option>
+                  <option value="Réduire abus/usage irrégulier du parc et du carburant">Réduire abus/usage irrégulier du parc et du carburant</option>
+                </select>
+
+                <label class="form-label">Modules inclus</label>
+                <div class="d-grid gap-1">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="m_gps" checked>
+                    <label class="form-check-label" for="m_gps">GPS / Fleet tracking</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="m_geo" checked>
+                    <label class="form-check-label" for="m_geo">Geofencing (zones)</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="m_id" checked>
+                    <label class="form-check-label" for="m_id">Identité & assignation</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="m_app" checked>
+                    <label class="form-check-label" for="m_app">Application agent (SOS / check-in)</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="m_ai" checked>
+                    <label class="form-check-label" for="m_ai">IA détection anomalies</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="m_audit" checked>
+                    <label class="form-check-label" for="m_audit">Audit / preuves / exports</label>
+                  </div>
+                </div>
+
+                <div class="hrx"></div>
+
+                <button class="btn btn-lg w-100 btn-cta btn-primary-cta mb-2" onclick="generatePitch()">Générer le Pitch</button>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <button class="btn btn-sm w-100 btn-ghost" onclick="copyOut('outPitch')">Copier</button>
+                  </div>
+                  <div class="col-6">
+                    <button class="btn btn-sm w-100 btn-ghost" onclick="downloadTxt('pitch_POLNA.txt', document.getElementById('outPitch').value)">Télécharger .txt</button>
+                  </div>
+                </div>
+
+                <p class="mt-2 small-muted">
+                  Astuce : clique "Imprimer / Export PDF" en haut pour sortir un PDF propre.
+                </p>
+              </div>
+
+              <div class="col-12 col-md-7">
+                <p class="print-note"><strong>Pitch POLNA (Databox SA)</strong> — Document généré</p>
+                <label class="form-label">Pitch généré</label>
+                <textarea class="form-control" id="outPitch" spellcheck="false"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Générateur MOU -->
+      <div class="col-12" id="mou">
+        <div class="cardx">
+          <div class="card-headerx">
+            <div>
+              <h3 class="title">Générateur de Modèle MOU (partenariat)</h3>
+              <p class="subtitle">Utile si tu veux cadrer le rôle du contracteur principal vs partenaire technique, les paiements, livrables et gouvernance.</p>
+            </div>
+            <span class="pill blue">Governance</span>
+          </div>
+          <div class="card-bodyx">
+            <div class="grid-2">
+              <div class="col-12 col-md-5">
+                <label class="form-label">Contracteur principal (local)</label>
+                <input class="form-control mb-2" id="m_prime" placeholder="Nom de la société locale" value="[Société locale]"/>
+
+                <label class="form-label">Partenaire technique</label>
+                <input class="form-control mb-2" id="m_partner" placeholder="Databox SA" value="Databox SA"/>
+
+                <label class="form-label">Projet</label>
+                <input class="form-control mb-2" id="m_project" placeholder="Système national de surveillance électronique" value="Système national de surveillance électronique (POLNA)"/>
+
+                <label class="form-label">Client final</label>
+                <input class="form-control mb-2" id="m_final" placeholder="PNH / Ministère / Agence" value="Police Nationale d'Haïti (PNH)"/>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-6">
+                    <label class="form-label">Devise</label>
+                    <select class="form-select" id="m_ccy">
+                      <option value="USD" selected>USD</option>
+                      <option value="EUR">EUR</option>
+                      <option value="HTG">HTG</option>
+                    </select>
+                  </div>
+                  <div class="col-6">
+                    <label class="form-label">Durée</label>
+                    <input class="form-control" id="m_term" placeholder="12 mois" value="12 mois"/>
+                  </div>
+                </div>
+
+                <label class="form-label">Méthode de facturation</label>
+                <select class="form-select mb-2" id="m_billing">
+                  <option value="Coût + marge + frais + taxes/douanes">Coût + marge + frais + taxes/douanes</option>
+                  <option value="Forfait (par phase)">Forfait (par phase)</option>
+                  <option value="Abonnement mensuel (SaaS + support)">Abonnement mensuel (SaaS + support)</option>
+                </select>
+
+                <label class="form-label">Paiement (logiciel)</label>
+                <input class="form-control mb-2" id="m_pay_sw" value="50% à la signature, 50% à la livraison après validation des spécifications/TDR."/>
+
+                <label class="form-label">Livraison équipements</label>
+                <input class="form-control mb-2" id="m_ship" value="Équipements neufs livrés au port de Miami pour expédition vers Haïti."/>
+
+                <button class="btn btn-lg w-100 btn-cta btn-secondary-cta mt-2" onclick="generateMou()">Générer MOU</button>
+                <div class="row g-2 mt-2">
+                  <div class="col-6">
+                    <button class="btn btn-sm w-100 btn-ghost" onclick="copyOut('outMou')">Copier</button>
+                  </div>
+                  <div class="col-6">
+                    <button class="btn btn-sm w-100 btn-ghost" onclick="downloadTxt('MOU_POLNA.txt', document.getElementById('outMou').value)">Télécharger .txt</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 col-md-7">
+                <label class="form-label">MOU généré</label>
+                <textarea class="form-control" id="outMou" spellcheck="false"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- grid -->
+  </div><!-- container -->
+
+  <!-- FOOTER TICKER -->
+  <div class="footer-ticker">
+    <div class="container">
+      <div class="ticker-wrapper">
+        <div class="ticker">
+          POLNA — Sécuriser les agents • Superviser les véhicules • Détecter les anomalies • Accélérer les enquêtes • Centraliser la preuve • Databox SA
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function scrollToEl(sel){
+      const el = document.querySelector(sel);
+      if(!el) return;
+      const offset = 80;
+      const elementPosition = el.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+
+    function readBool(id){ return !!document.getElementById(id)?.checked; }
+    function val(id){ return (document.getElementById(id)?.value || '').trim(); }
+
+    function formatIntLike(n){
+      const x = String(n || '').replace(/[^\d]/g,'');
+      if(!x) return '';
+      return Number(x).toLocaleString('fr-FR');
+    }
+
+    function modulesList(){
+      const mods = [];
+      if(readBool('m_gps')) mods.push("GPS / suivi flotte (position, trajectoires, arrêts)");
+      if(readBool('m_geo')) mods.push("Geofencing (zones autorisées/interdites + alertes)");
+      if(readBool('m_id'))  mods.push("Identité & assignation (qui est à bord, qui est en mission)");
+      if(readBool('m_app')) mods.push("Application agent (SOS, check-in, signalement)");
+      if(readBool('m_ai'))  mods.push("IA anomalies (arrêts suspects, incohérences, routes répétitives)");
+      if(readBool('m_audit'))mods.push("Audit & preuves (journalisation, exports, rapports)");
+      return mods;
+    }
+
+    function generatePitch(){
+      const client = val('f_client') || "Client final";
+      const location = val('f_location') || "Pays/ville";
+      const vehicles = formatIntLike(val('f_vehicles')) || "—";
+      const officers = formatIntLike(val('f_officers')) || "—";
+      const objective = val('f_objective') || "Objectif opérationnel";
+      const mods = modulesList();
+
+      // KPIs visibles en haut (petit effet "wow")
+      document.getElementById('kpiVehicles').textContent = vehicles || "—";
+      document.getElementById('kpiOfficers').textContent = officers || "—";
+
+      const txt =
+`OBJET : Proposition — POLNA (Police Fleet AI) pour ${client}
+
+1) Contexte & problème
+Dans ${location}, lorsqu'un agent est en difficulté, ou qu'un véhicule sort du périmètre, l'enquête démarre souvent sans données fiables :
+- pas de dernière position certifiée,
+- incertitude sur l'identité à bord,
+- manque d'historique des communications et des événements.
+Chaque minute perdue augmente le risque opérationnel.
+
+2) Notre réponse : POLNA (Databox SA)
+POLNA est une plateforme de supervision et de protection des forces de police. Le système répond à 3 questions, chaque minute, pour chaque véhicule :
+- Où est le véhicule ? (GPS)
+- Qui est à bord ? (identité / assignation)
+- Que se passe-t-il ? (communications / événements / alertes)
+Ensuite, l'IA connecte ces données pour détecter automatiquement les incohérences et anomalies, tout en documentant la preuve.
+
+3) Périmètre indicatif
+- Flotte : ${vehicles} véhicules
+- Effectifs : ${officers} agents
+- Objectif prioritaire : ${objective}
+
+4) Modules proposés
+${mods.length ? mods.map((m,i)=>`- ${m}`).join('\n') : "- (à définir selon cadrage)"}
+
+5) Valeur & résultats attendus
+- Protection des agents et réduction du temps de réponse
+- Supervision en temps réel (carte + alertes + chronologie)
+- Traçabilité exploitable pour enquêtes (audit / export / rapports)
+- Réduction des usages irréguliers, amélioration de la discipline de patrouille
+- Gouvernance opérationnelle : indicateurs de couverture, zones à risque, patterns récurrents
+
+6) Méthode de déploiement (recommandée)
+- Phase pilote (4–8 semaines) : équipement échantillon, paramétrage zones/alertes, tests terrain, formation
+- Généralisation (8–16 semaines) : montée en charge, procédures standard, industrialisation support & sécurité
+
+7) Prochaine étape
+Nous proposons une démonstration + atelier de cadrage (périmètre, contraintes, calendrier, gouvernance) afin de valider rapidement le pilote.
+
+Databox SA — POLNA
+(Contact / Email / Téléphone)
+`;
+      document.getElementById('outPitch').value = txt;
+      toast("Pitch généré ✅");
+    }
+
+    function generateMou(){
+      const prime = val('m_prime') || "[Contracteur principal]";
+      const partner = val('m_partner') || "Databox SA";
+      const project = val('m_project') || "[Projet]";
+      const finalClient = val('m_final') || "[Client final]";
+      const ccy = val('m_ccy') || "USD";
+      const term = val('m_term') || "12 mois";
+      const billing = val('m_billing') || "Coût + marge + frais + taxes/douanes";
+      const paySw = val('m_pay_sw') || "50% à la signature, 50% à la livraison après validation.";
+      const ship = val('m_ship') || "Livraison au port de Miami pour expédition.";
+
+      const txt =
+`PROTOCOLE D'ACCORD (MOU)
+Entre :
+(1) ${prime}, ci-après « Contracteur principal »
+et
+(2) ${partner}, ci-après « Partenaire technique »
+
+OBJET
+Le présent MOU définit le cadre de collaboration entre les Parties pour le projet : « ${project} », au bénéfice du client final : « ${finalClient} ».
+
+1. RÔLES ET RESPONSABILITÉS
+1.1 Contracteur principal
+- Porte la relation contractuelle locale (conformité administrative, fiscalité locale, douanes si applicable)
+- Coordonne l'exécution globale, les accès terrain, et la communication institutionnelle
+- Assure la réception administrative des livrables auprès du client final (procès-verbaux, validations)
+
+1.2 Partenaire technique (${partner})
+- Conçoit, fournit et intègre la solution POLNA (plateforme + modules convenus)
+- Fournit documentation, formation, transfert de compétences, et support technique
+- Met en place les mécanismes de traçabilité, audit, et export de rapports
+
+2. GOUVERNANCE
+- Comité de pilotage hebdomadaire pendant le déploiement, puis mensuel
+- Un point focal par Partie + un référent client final
+- Procédure de gestion des changements (CR, validation, impact coût/délai)
+
+3. LIVRABLES (à préciser en annexe)
+- Plateforme logicielle + modules activés
+- Matériel/dispositifs (si inclus) + installation + tests
+- Plan de formation + guides d'exploitation
+- Rapports & exports + journalisation (audit)
+
+4. MODALITÉS FINANCIÈRES
+4.1 Devise : ${ccy}
+4.2 Méthode de facturation : ${billing}
+4.3 Paiement logiciel : ${paySw}
+4.4 Livraison équipements : ${ship}
+4.5 Les paiements sont effectués sur le compte bancaire indiqué par la Partie bénéficiaire (RIB/IBAN en annexe).
+
+5. CONFIDENTIALITÉ
+Chaque Partie s'engage à protéger les informations confidentielles, techniques, commerciales et opérationnelles relatives au projet.
+
+6. DURÉE
+Le présent MOU prend effet à la date de signature et demeure valable pour une durée de ${term}, renouvelable d'un commun accord.
+
+7. NON-EXCLUSIVITÉ / EXCLUSIVITÉ (à cocher)
+[ ] Non-exclusif    [ ] Exclusif sur le périmètre défini en annexe
+
+8. DROIT APPLICABLE ET RÈGLEMENT DES LITIGES
+À définir selon le pays d'exécution. Les Parties privilégient une résolution amiable avant arbitrage/juridiction.
+
+Fait à : ____________________   Date : ____________________
+
+Contracteur principal : ${prime}           Partenaire technique : ${partner}
+Nom/Qualité/Signature : __________________  Nom/Qualité/Signature : __________________
+`;
+      document.getElementById('outMou').value = txt;
+      toast("MOU généré ✅");
+    }
+
+    async function copyOut(id){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.select();
+      el.setSelectionRange(0, el.value.length);
+      try{
+        await navigator.clipboard.writeText(el.value);
+        toast("Copié dans le presse-papiers ✅");
+      }catch(e){
+        document.execCommand('copy');
+        toast("Copie réalisée (mode compatibilité) ✅");
+      }
+    }
+
+    function downloadTxt(filename, content){
+      const blob = new Blob([content || ""], {type:"text/plain;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename || "document.txt";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 200);
+      toast("Fichier téléchargé ✅");
+    }
+
+    // mini toast simple
+    let toastTimer = null;
+    function toast(msg){
+      let t = document.getElementById('toastBox');
+      if(!t){
+        t = document.createElement('div');
+        t.id = 'toastBox';
+        t.style.position='fixed';
+        t.style.right='16px';
+        t.style.top='82px';
+        t.style.zIndex='9999';
+        t.style.padding='10px 12px';
+        t.style.border='1px solid rgba(255,255,255,.16)';
+        t.style.borderRadius='14px';
+        t.style.background='rgba(0,0,0,.55)';
+        t.style.color='rgba(233,242,255,.92)';
+        t.style.backdropFilter='blur(10px)';
+        t.style.boxShadow='0 14px 30px rgba(0,0,0,.25)';
+        t.style.maxWidth='320px';
+        t.style.fontWeight='700';
+        t.style.fontSize='0.95rem';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity='1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>{ t.style.opacity='0'; }, 2200);
+    }
+
+    // Génère une première version au chargement
+    window.addEventListener('load', () => {
+      generatePitch();
+      generateMou();
+    });
+
+    // Optimisation du scroll pour mobile
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        if(this.getAttribute('href') !== '#') {
+          e.preventDefault();
+          scrollToEl(this.getAttribute('href'));
+        }
+      });
+    });
+  </script>
+</body>
+</html>
