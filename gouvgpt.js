@@ -1,6 +1,7 @@
 /**
  * gouvgpt.js — Orchestrateur Backend FinTraX
  * Stack: Node.js + Express + MinIO + n8n Proxy
+ * Mode: Asynchrone (Polling) pour éviter les Timeouts
  */
 
 'use strict';
@@ -19,8 +20,20 @@ const crypto = require('crypto');
 const app = express();
 const PORT = Number(process.env.PORT || 4321);
 
-// Configuration du Webhook n8n (Orchestrateur)
+// Configuration du Webhook n8n
 const N8N_CHAT_WEBHOOK = process.env.N8N_CHAT_WEBHOOK_URL || "https://n8n.fintrax.org/webhook/chat";
+
+// --- Mémoire des Tâches (Pour gérer l'asynchrone) ---
+// Dans une prod réelle, on utiliserait Redis, mais une Map suffit ici.
+const taskStore = new Map();
+
+// Nettoyage automatique des vieilles tâches (toutes les heures)
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, task] of taskStore.entries()) {
+        if (now - task.timestamp > 3600000) taskStore.delete(id); // 1h TTL
+    }
+}, 3600000);
 
 // --- 1. Configuration Chemins & Données ---
 const PUBLIC_PATH = path.join(__dirname, 'public');
@@ -108,12 +121,9 @@ app.post('/api/rooms/:roomId/ingest', upload.single('file'), async (req, res) =>
     if (!file) throw new Error("Aucun fichier.");
 
     const objectName = `${roomId}/${Date.now()}_${file.originalname}`;
-    
-    // Upload MinIO
     await minioClient.putObject(MINIO_BUCKET, objectName, fssync.createReadStream(file.path), file.size);
     const minioUrl = await minioClient.presignedGetObject(MINIO_BUCKET, objectName, 24*60*60);
 
-    // Update Room
     const roomsData = await readJson(ROOMS_DATA_PATH, { rooms: [] });
     const room = roomsData.rooms.find(r => r.id === roomId);
     if (!room) throw new Error("Salon introuvable.");
@@ -134,19 +144,17 @@ app.post('/api/rooms/:roomId/ingest', upload.single('file'), async (req, res) =>
   } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// 3. ROUTE CHAT UNIQUE (Orchestrateur n8n)
+// 3. ROUTE CHAT ASYNCHRONE (Fire & Forget)
 app.post('/api/chat/n8n', async (req, res) => {
   try {
     const { roomId, message, model } = req.body;
     
-    // Charger le contexte du salon
+    // Contexte
     const config = await readJson(PERSONAS_CONFIG_PATH, { personas: DEFAULT_PERSONAS });
     const roomsData = await readJson(ROOMS_DATA_PATH, { rooms: [] });
     const room = roomsData.rooms.find(r => r.id === roomId);
-    
     if (!room) throw new Error("Salon introuvable.");
 
-    // Construire la liste des "Experts" présents dans ce salon
     const activeMinistries = config.personas
         .filter(p => room.activePersonas.includes(p.id))
         .map(p => ({
@@ -156,48 +164,85 @@ app.post('/api/chat/n8n', async (req, res) => {
             emoji: p.avatarEmoji
         }));
 
-    // Construire la liste des fichiers disponibles pour le RAG
     const ragContext = room.files.map(f => ({
         filename: f.name,
         url: f.downloadUrl,
         type: f.type
     }));
 
-    // Payload envoyé à n8n
     const payloadForN8n = {
         question: message,
         room_id: roomId,
         model: model || "gpt-4o",
-        // Tout le contexte nécessaire pour que l'agent n8n décide
         orchestration_context: {
-            available_experts: activeMinistries, // Qui est autour de la table ?
-            knowledge_base: ragContext,          // Quels dossiers sont sur la table ?
+            available_experts: activeMinistries,
+            knowledge_base: ragContext,
             timestamp: new Date().toISOString()
         }
     };
 
-    console.log(`[Orchestrateur] Envoi de la question "${message}" à n8n (${activeMinistries.length} experts).`);
+    // --- LOGIQUE ASYNCHRONE ---
+    const taskId = crypto.randomUUID();
+    // 1. On stocke l'état "pending"
+    taskStore.set(taskId, { status: 'processing', timestamp: Date.now() });
 
-    // Appel Webhook
-    // Note: Utilisation de fetch natif (Node 18+)
-    const n8nRes = await fetch(N8N_CHAT_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payloadForN8n)
-    });
+    // 2. On lance l'appel à n8n SANS "await" bloquant (Background)
+    (async () => {
+        try {
+            console.log(`[Tâche ${taskId}] Envoi à n8n (Async)...`);
+            const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+            
+            const n8nRes = await fetch(N8N_CHAT_WEBHOOK, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadForN8n)
+            });
 
-    if (!n8nRes.ok) throw new Error(`n8n Error: ${n8nRes.statusText}`);
-    
-    const jsonResponse = await n8nRes.json();
-    
-    // n8n doit renvoyer un JSON de type: 
-    // { "responses": [ { "ministry": "Finances", "text": "..." }, { "ministry": "Justice", "text": "..." } ] }
-    res.json({ ok: true, data: jsonResponse });
+            if (!n8nRes.ok) throw new Error(`n8n HTTP ${n8nRes.status}`);
+            const jsonResponse = await n8nRes.json();
+            
+            // 3. n8n a répondu : on met à jour le store
+            taskStore.set(taskId, { 
+                status: 'completed', 
+                data: jsonResponse, 
+                timestamp: Date.now() 
+            });
+            console.log(`[Tâche ${taskId}] Succès n8n.`);
+
+        } catch (err) {
+            console.error(`[Tâche ${taskId}] Erreur n8n:`, err.message);
+            taskStore.set(taskId, { 
+                status: 'error', 
+                error: err.message, 
+                timestamp: Date.now() 
+            });
+        }
+    })();
+
+    // 4. On répond immédiatement au frontend avec l'ID de suivi
+    res.json({ ok: true, taskId: taskId, status: 'processing' });
 
   } catch (e) {
     console.error("[Chat Error]", e);
     res.status(502).json({ ok: false, error: e.message });
   }
+});
+
+// 4. ROUTE DE POLLING (Vérification du statut)
+app.get('/api/chat/task/:taskId', (req, res) => {
+    const { taskId } = req.params;
+    const task = taskStore.get(taskId);
+    
+    if (!task) {
+        return res.status(404).json({ ok: false, status: 'not_found' });
+    }
+    
+    res.json({ 
+        ok: true, 
+        status: task.status, 
+        data: task.data, // Sera présent si completed
+        error: task.error // Sera présent si error
+    });
 });
 
 app.get('/api/admin/personas', async (req, res) => res.json(await readJson(PERSONAS_CONFIG_PATH, { personas: DEFAULT_PERSONAS })));

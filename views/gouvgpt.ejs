@@ -1,261 +1,793 @@
-<!-- 
-  GouvBrain Frontend - Mode Orchestrateur Unique
--->
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-bs-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GouvBrain • Conseil des Ministres IA</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>GouvBrain • Orchestrateur</title>
+  
+  <!-- Fonts Modernes (Inter / JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap 5 & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
 
   <style>
-    :root { 
-        --bg-body: #09090b; --bg-sidebar: #0f1016; --bg-surface: #18181b; --text-primary: #f4f4f5; 
-        --accent-primary: #3b82f6; --font-main: 'Plus Jakarta Sans', sans-serif;
+    :root {
+        /* Palette Lobe-Chat Like */
+        --c-bg-body: #000000;
+        --c-bg-sidebar: #080808; /* Gauche et Droite */
+        --c-bg-card: #181818;
+        --c-bg-input: #1a1a1a;
+        --c-bg-bubble-bot: #1c1c1c;
+        --c-bg-bubble-user: #006fee; 
+        
+        --c-border: #2c2c2c;
+        --c-border-hover: #3a3a3a;
+        
+        --c-text-primary: #ffffff;
+        --c-text-secondary: #989899;
+        --c-text-tertiary: #666666;
+        
+        --r-radius-lg: 16px;
+        --r-radius-md: 12px;
+        --r-radius-sm: 8px;
+        
+        --font-sans: 'Inter', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
     }
-    body { background-color: var(--bg-body); color: var(--text-primary); font-family: var(--font-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+    body {
+        background-color: var(--c-bg-body);
+        color: var(--c-text-primary);
+        font-family: var(--font-sans);
+        height: 100vh;
+        overflow: hidden;
+        display: flex; /* Layout Flex global */
+        font-size: 14.5px;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- COMMON SIDEBAR STYLES --- */
+    .app-sidebar, .app-inspector {
+        background-color: var(--c-bg-sidebar);
+        display: flex;
+        flex-direction: column;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); /* Animation fluide style iOS/Lobe */
+        z-index: 100;
+        flex-shrink: 0;
+    }
+
+    /* --- LEFT SIDEBAR --- */
+    .app-sidebar {
+        width: 260px;
+        border-right: 1px solid var(--c-border);
+        padding: 16px;
+    }
+
+    /* --- RIGHT INSPECTOR (Nouveau) --- */
+    .app-inspector {
+        width: 300px;
+        border-left: 1px solid var(--c-border);
+        padding: 0; /* Padding géré en interne pour scroll */
+        position: relative;
+    }
     
-    .chat-area { flex: 1; overflow-y: auto; background: radial-gradient(circle at 50% -20%, #172554 0%, var(--bg-body) 60%); padding: 2rem 15%; display: flex; flex-direction: column; gap: 1.5rem; }
-    .sidebar { width: 300px; background: var(--bg-sidebar); border-right: 1px solid #27272a; display: flex; flex-direction: column; }
+    /* Classe pour fermer l'inspecteur */
+    .app-inspector.collapsed {
+        width: 0;
+        opacity: 0;
+        overflow: hidden;
+        border-left: none;
+    }
+
+    /* Inspector Header */
+    .inspector-header {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        border-bottom: 1px solid var(--c-border);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    .inspector-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+    }
+
+    /* File List Items (Right Sidebar) */
+    .file-card {
+        background: var(--c-bg-card);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-radius-md);
+        padding: 12px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        transition: border-color 0.2s;
+    }
+    .file-card:hover { border-color: var(--c-border-hover); }
+    .file-icon {
+        width: 32px; height: 32px;
+        background: rgba(255, 82, 82, 0.1);
+        color: #ff5252;
+        border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .file-info { overflow: hidden; flex: 1; }
+    .file-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta { font-size: 11px; color: var(--c-text-tertiary); margin-top: 2px; }
+
+
+    /* --- LEFT SIDEBAR CONTENT --- */
+    .brand-area {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 8px 20px 8px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--c-border);
+    }
     
-    .input-container { max-width: 800px; margin: 0 auto; width: 100%; padding-bottom: 2rem; position: sticky; bottom: 0; }
-    .input-box { background: var(--bg-surface); border: 1px solid #27272a; border-radius: 16px; padding: 0.8rem; display: flex; gap: 0.5rem; align-items: flex-end; box-shadow: 0 -10px 30px rgba(0,0,0,0.5); }
-    textarea { background: transparent; border: none; color: white; width: 100%; resize: none; outline: none; font-family: inherit; }
+    .brand-logo {
+        width: 32px; height: 32px;
+        background: linear-gradient(135deg, #006fee 0%, #00c6f7 100%);
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 16px;
+    }
+
+    .sidebar-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--c-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 16px 8px 8px;
+    }
+
+    .persona-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--r-radius-sm);
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        margin-bottom: 2px;
+    }
+    .persona-item:hover { background-color: var(--c-bg-card); }
+    .persona-item.active { background-color: rgba(0, 111, 238, 0.1); border-color: rgba(0, 111, 238, 0.2); }
     
-    .msg { display: flex; gap: 1rem; animation: slideIn 0.3s ease; }
-    .msg.me { flex-direction: row-reverse; }
-    .msg-content { padding: 1rem 1.25rem; border-radius: 16px; line-height: 1.6; position: relative; max-width: 80%; }
-    .msg.bot .msg-content { background: var(--bg-surface); border: 1px solid #27272a; color: #e2e8f0; border-top-left-radius: 4px; }
-    .msg.me .msg-content { background: var(--accent-primary); color: white; border-top-right-radius: 4px; }
-    .avatar { width: 36px; height: 36px; border-radius: 8px; background: #27272a; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .persona-avatar {
+        width: 28px; height: 28px;
+        border-radius: 6px;
+        background: var(--c-bg-card);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px;
+        border: 1px solid var(--c-border);
+    }
+
+    /* --- MAIN CHAT AREA --- */
+    .app-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        background: radial-gradient(circle at 50% -20%, #111 0%, #000 60%);
+        min-width: 0; /* Important pour que le flex shrink fonctionne avec le text-truncate */
+    }
+
+    .chat-header {
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        background: rgba(0,0,0,0.5);
+        position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+    }
+
+    .chat-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 80px 20px 180px 20px; 
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        scroll-behavior: smooth;
+    }
     
+    .chat-content::-webkit-scrollbar { width: 6px; }
+    .chat-content::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    .chat-content::-webkit-scrollbar-track { background: transparent; }
+
+    /* --- MESSAGES --- */
+    .message-row {
+        display: flex;
+        gap: 16px;
+        max-width: 900px;
+        margin: 0 auto;
+        width: 100%;
+        animation: fadeIn 0.3s ease;
+        position: relative;
+    }
+    .message-row.me { flex-direction: row-reverse; }
+
+    /* Indentation Ministères */
+    .message-row.sub-message {
+        margin-left: auto;
+        padding-left: 40px; 
+        max-width: 900px;
+    }
+    .message-row.sub-message::before {
+        content: ''; position: absolute; left: 20px; top: -30px; bottom: 50%; width: 2px;
+        background-color: var(--c-border); border-bottom-left-radius: 8px; border-bottom: 2px solid var(--c-border);
+    }
+    .message-row.sub-message::after {
+        content: ''; position: absolute; left: 20px; top: 50%; width: 12px; height: 2px; background-color: var(--c-border);
+    }
+
+    .message-avatar-container { flex-shrink: 0; margin-top: 4px; z-index: 1; }
+    .message-avatar {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: var(--c-bg-card);
+        border: 1px solid var(--c-border);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px;
+    }
+
+    .message-bubble-container { display: flex; flex-direction: column; max-width: 80%; }
+    .message-row.me .message-bubble-container { align-items: flex-end; }
+
+    .message-sender {
+        font-size: 12px; color: var(--c-text-secondary); margin-bottom: 6px; padding-left: 2px; font-weight: 500;
+    }
+    .message-row.me .message-sender { display: none; }
+
+    .message-bubble {
+        padding: 12px 18px;
+        border-radius: 18px;
+        line-height: 1.6;
+        position: relative;
+        font-size: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .message-row.bot .message-bubble {
+        background-color: var(--c-bg-bubble-bot);
+        border: 1px solid var(--c-border);
+        border-top-left-radius: 4px;
+    }
+    
+    .message-row.synthesis .message-bubble {
+        background: linear-gradient(145deg, #1c1c1c 0%, #111 100%);
+        border: 1px solid #333;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .message-row.synthesis .message-bubble::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+        background: linear-gradient(to bottom, #006fee, #a464ff);
+        border-top-left-radius: 4px; border-bottom-left-radius: 4px;
+    }
+
+    .message-row.me .message-bubble {
+        background-color: var(--c-bg-bubble-user);
+        color: white;
+        border-top-right-radius: 4px;
+        background-image: linear-gradient(135deg, #006fee 0%, #005bc4 100%);
+    }
+
+    /* --- FIX LAYOUT: Dernier message --- */
+    /* Ajoute une marge au dernier message pour qu'il ne soit jamais caché par l'input */
+    .message-row:last-child {
+        margin-bottom: 120px !important;
+    }
+
+    .rag-sources { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .rag-chip {
+        display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+        border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+        font-size: 11px; color: var(--c-text-secondary); font-family: var(--font-mono); cursor: default;
+    }
+    .rag-chip i { font-size: 12px; color: #ff5252; }
+
+    /* --- INPUT AREA --- */
+    .input-wrapper {
+        position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 0 24px 0; z-index: 50;
+        background: linear-gradient(to top, var(--c-bg-body) 20%, transparent 100%);
+        display: flex; flex-direction: column; align-items: center;
+    }
+
+    .input-container {
+        width: 100%; max-width: 800px;
+        background: rgba(30, 30, 30, 0.75);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
+        padding: 12px; display: flex; flex-direction: column; gap: 8px;
+        box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2); transition: all 0.2s ease-in-out; margin: 0 16px;
+    }
+    .input-container:focus-within {
+        border-color: rgba(0, 111, 238, 0.5);
+        box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 111, 238, 0.2);
+        background: rgba(30, 30, 30, 0.95);
+    }
+
+    .input-header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
+    .input-tools-left { display: flex; gap: 4px; }
+
+    .tool-btn {
+        width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--c-text-tertiary);
+        display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer;
+    }
+    .tool-btn:hover { background: rgba(255,255,255,0.08); color: var(--c-text-primary); }
+
+    .chat-textarea {
+        background: transparent; border: none; color: var(--c-text-primary); width: 100%; padding: 8px 12px;
+        resize: none; outline: none; max-height: 200px; min-height: 44px; font-family: var(--font-sans); font-size: 15px; line-height: 1.6;
+    }
+    .chat-textarea::placeholder { color: rgba(255,255,255,0.2); }
+
+    .input-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 4px; }
+
+    .model-selector {
+        display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px;
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05);
+        color: var(--c-text-secondary); font-size: 12px; font-family: var(--font-mono); cursor: pointer;
+    }
+    .model-icon { color: #10a37f; }
+
+    .send-btn {
+        width: 36px; height: 36px; border-radius: 10px; border: none; background: #006fee; color: white;
+        display: flex; align-items: center; justify-content: center; transition: all 0.2s; cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 111, 238, 0.3);
+    }
+    .send-btn:hover { background: #005bc4; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 111, 238, 0.4); }
+    .send-btn:disabled { background: #333; cursor: not-allowed; opacity: 0.7; box-shadow: none; }
+    
+    .footer-text { font-size: 11px; color: var(--c-text-tertiary); margin-top: 8px; text-align: center; opacity: 0.6; }
+    .typing-indicator { font-size: 11px; color: var(--c-text-tertiary); min-height: 17px; margin-bottom: 4px; padding-left: 10px; }
+
+    /* Modal & Utils */
+    .modal-content { background-color: #1e1e1e; border: 1px solid var(--c-border); border-radius: 20px; }
+    .modal-header { border-bottom: 1px solid var(--c-border); }
+    .modal-footer { border-top: 1px solid var(--c-border); }
+    .form-control { background: #111; border: 1px solid var(--c-border); color: white; border-radius: 10px; }
+    .form-control:focus { background: #111; color: white; border-color: #006fee; box-shadow: 0 0 0 3px rgba(0,111,238,0.2); }
     .thinking-dots::after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
     @keyframes dots { 0%, 20% { content: ' .'; } 40% { content: ' ..'; } 60% { content: ' ...'; } 80%, 100% { content: ' ....'; } }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Mobile */
+    @media (max-width: 900px) {
+        .app-sidebar { display: none; }
+        .app-inspector { position: absolute; right: 0; height: 100%; box-shadow: -5px 0 20px rgba(0,0,0,0.5); }
+        .app-inspector.collapsed { transform: translateX(100%); width: 300px; opacity: 1; }
+    }
   </style>
 </head>
 
 <body>
 
-  <!-- MODAL -->
-  <div class="modal fade" id="roomModal" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content" style="background: #18181b; border: 1px solid #3f3f46; color: white;">
-        <div class="modal-header border-0"><h4><i class="bi bi-cpu me-2"></i>Configuration Conseil IA</h4></div>
-        <div class="modal-body">
-            <div class="mb-3">
-                <label class="text-secondary small fw-bold mb-1">SUJET</label>
-                <input type="text" id="roomNameInput" class="form-control bg-dark text-white border-secondary" placeholder="ex: Projet de Loi Finances">
-            </div>
-            <label class="text-secondary small fw-bold mb-2">PARTICIPANTS</label>
-            <div class="row g-2" id="personaSelector"></div>
+  <!-- MODAL : CONFIGURATION -->
+  <div class="modal fade" id="roomModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-sliders2 me-2"></i>Configuration Session</h5>
         </div>
-        <div class="modal-footer border-0">
-            <button class="btn btn-primary w-100 fw-bold" onclick="createRoom()">Ouvrir la Session</button>
+        <div class="modal-body">
+          <div class="mb-4">
+            <label class="form-label small fw-bold text-secondary">SUJET DE LA SESSION</label>
+            <input type="text" class="form-control form-control-lg" id="roomNameInput" placeholder="ex: Analyse PLF 2026">
+          </div>
+          <label class="form-label small fw-bold text-secondary mb-3">CONSEIL DES MINISTRES</label>
+          <div class="row g-2" id="personaSelector"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary w-100 py-2 fw-bold" style="background:#006fee; border:none; border-radius:10px;" onclick="createRoom()">
+            Démarrer le Conseil
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MAIN APP -->
-  <div id="appShell" class="d-flex h-100" style="opacity:0; pointer-events:none; transition: opacity 0.5s;">
-    <!-- SIDEBAR -->
-    <div class="sidebar p-3">
-        <div class="mb-4">
-            <h5 class="fw-bold text-white mb-0">GouvBrain</h5>
-            <div class="small text-secondary" id="roomTitleDisplay">Chargement...</div>
+  <!-- SIDEBAR GAUCHE -->
+  <aside class="app-sidebar">
+    <div class="brand-area">
+        <div class="brand-logo"><i class="bi bi-grid-fill"></i></div>
+        <div class="fw-bold fs-5">GouvBrain</div>
+        <span class="badge bg-secondary bg-opacity-25 text-secondary ms-auto" style="font-size:10px;">BETA</span>
+    </div>
+    
+    <div class="sidebar-section-title">Session en cours</div>
+    <div class="p-2 mb-3 rounded-3" style="background: var(--c-bg-input); border: 1px solid var(--c-border);">
+        <div class="fw-bold text-white text-truncate" id="roomTitleDisplay">Chargement...</div>
+        <div class="d-flex align-items-center gap-2 mt-1 text-secondary" style="font-size: 11px;">
+            <i class="bi bi-clock"></i> <span id="sessionTime">00:00</span>
+            <span class="ms-auto"><i class="bi bi-circle-fill text-success" style="font-size:6px;"></i> En ligne</span>
         </div>
-        <h6 class="text-secondary small fw-bold text-uppercase mb-3">Cabinet Actif</h6>
-        <div id="activePersonasCol" class="d-flex flex-column gap-2 overflow-auto"></div>
     </div>
 
-    <!-- CHAT -->
-    <div style="flex:1; display:flex; flex-direction:column; position:relative;">
-        <div id="chatWrap" class="chat-area">
-            <div class="text-center text-muted mt-5">
-                <i class="bi bi-stars fs-1 mb-3 d-block"></i>
-                <h3>Le conseil est ouvert</h3>
-                <p>Posez une question. L'orchestrateur distribuera la parole.</p>
-            </div>
-        </div>
+    <div class="sidebar-section-title">Cabinet Actif</div>
+    <div id="activePersonasCol" class="d-flex flex-column overflow-auto pe-1" style="flex:1;">
+        <!-- Personas injectés ici -->
+    </div>
+  </aside>
 
+  <!-- MAIN CHAT -->
+  <main class="app-main">
+    <header class="chat-header">
+        <div class="d-flex align-items-center gap-3">
+            <h5 class="m-0 fw-bold">Conseil des Ministres</h5>
+        </div>
+        <div>
+            <button class="btn btn-sm btn-icon text-secondary" onclick="toggleInspector()" title="Afficher le dossier">
+                <i class="bi bi-layout-sidebar-reverse"></i>
+            </button>
+        </div>
+    </header>
+
+    <div id="chatWrap" class="chat-content">
+        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center opacity-50 empty-state">
+            <div style="font-size: 48px; margin-bottom: 20px;">🏛️</div>
+            <h4>Le Conseil est réuni</h4>
+            <p class="text-secondary" style="max-width: 400px;">
+                Posez une question politique, juridique ou budgétaire. L'orchestrateur distribuera la parole aux ministères compétents.
+            </p>
+        </div>
+    </div>
+
+    <div class="input-wrapper">
+        <div class="typing-indicator" id="statusIndicator"></div>
         <div class="input-container">
-            <div class="text-center small text-secondary mb-2" id="statusIndicator"></div>
-            <div class="input-box">
-                <input type="file" id="ragInput" hidden onchange="uploadRag()">
-                <button class="btn btn-link text-secondary" onclick="document.getElementById('ragInput').click()"><i class="bi bi-paperclip fs-5"></i></button>
-                <textarea id="chatInput" rows="1" placeholder="Question aux ministères..." oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-                <button class="btn btn-primary btn-sm px-3" onclick="sendMessage()"><i class="bi bi-send-fill"></i></button>
+            <div class="input-header">
+                 <div class="input-tools-left">
+                    <input type="file" id="ragInput" hidden onchange="uploadRag()">
+                    <button class="tool-btn" onclick="document.getElementById('ragInput').click()" title="Joindre un fichier">
+                        <i class="bi bi-paperclip"></i>
+                    </button>
+                    <button class="tool-btn" title="Bibliothèque de Prompts (Bientôt)">
+                        <i class="bi bi-stars"></i>
+                    </button>
+                    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 6px 4px;"></div>
+                    <button class="tool-btn" onclick="clearChat()" title="Nouveau Sujet">
+                        <i class="bi bi-eraser"></i>
+                    </button>
+                 </div>
+            </div>
+            <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="Posez une question au Conseil des Ministres..."></textarea>
+            <div class="input-footer">
+                <div class="model-selector" title="Modèle Actif">
+                    <i class="bi bi-lightning-charge-fill model-icon"></i>
+                    <span>GPT-4o</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 11px; color: var(--c-text-tertiary);" class="d-none d-md-block">Entrée pour envoyer</span>
+                    <button id="sendBtn" class="send-btn" onclick="sendMessage()">
+                        <i class="bi bi-arrow-up-short fs-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="footer-text">GouvBrain IA peut commettre des erreurs. Vérifiez les informations importantes.</div>
+    </div>
+  </main>
+
+  <!-- SIDEBAR DROITE (INSPECTEUR) -->
+  <aside class="app-inspector" id="appInspector">
+    <div class="inspector-header">
+        <span>Dossier de Séance</span>
+        <button class="btn btn-sm text-secondary p-0" onclick="toggleInspector()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="inspector-content">
+        <div class="sidebar-section-title mt-0">Base de Connaissances</div>
+        <div id="inspectorFileList">
+            <div class="text-center text-secondary small py-4 opacity-50 fst-italic">Aucun document joint</div>
+        </div>
+
+        <div class="sidebar-section-title mt-4">Paramètres du Modèle</div>
+        <div class="p-3 rounded-3 mb-2" style="background: var(--c-bg-card); border: 1px solid var(--c-border);">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="small">Température</span>
+                <span class="small text-secondary">0.3</span>
+            </div>
+            <div class="progress" style="height: 4px; background: #333;">
+                <div class="progress-bar bg-primary" style="width: 30%"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-3 mb-2">
+                <span class="small">RAG Top-K</span>
+                <span class="small text-secondary">5</span>
+            </div>
+            <div class="progress" style="height: 4px; background: #333;">
+                <div class="progress-bar bg-success" style="width: 50%"></div>
             </div>
         </div>
     </div>
-  </div>
+  </aside>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     let currentRoomId = null;
     let allPersonas = [];
     let activePersonas = [];
+    let ragFilesList = [];
+    let isPolling = false;
+
+    // --- UTILS ---
+    function formatTime() {
+        const now = new Date();
+        return now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    }
+    setInterval(() => { const el = document.getElementById('sessionTime'); if(el) el.innerText = formatTime(); }, 60000);
+
+    const tx = document.getElementById('chatInput');
+    tx.setAttribute('style', 'height:' + (tx.scrollHeight) + 'px;overflow-y:hidden;');
+    tx.addEventListener("input", function() {
+        this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
+    }, false);
+
+    function toggleInspector() {
+        document.getElementById('appInspector').classList.toggle('collapsed');
+    }
+
+    function clearChat() {
+        document.getElementById('chatWrap').innerHTML = `
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center opacity-50 empty-state">
+                <div style="font-size: 48px; margin-bottom: 20px;">✨</div>
+                <h4>Nouvelle Session</h4>
+                <p class="text-secondary" style="max-width: 400px;">Le contexte a été nettoyé.</p>
+            </div>
+        `;
+    }
 
     // --- INIT ---
     async function init() {
-        const res = await fetch('/api/admin/personas');
-        const data = await res.json();
-        allPersonas = data.personas;
-
-        document.getElementById('personaSelector').innerHTML = allPersonas.map(p => `
-            <div class="col-md-6">
-                <div class="form-check bg-black bg-opacity-25 p-3 rounded border border-secondary border-opacity-25">
-                    <input class="form-check-input" type="checkbox" value="${p.id}" id="p_${p.id}" checked>
-                    <label class="form-check-label d-flex align-items-center gap-2" for="p_${p.id}">
-                        <span class="fs-4">${p.avatarEmoji}</span>
-                        <div>
-                            <div class="fw-bold text-white">${p.ministry}</div>
-                            <div class="small text-secondary">${p.name}</div>
-                        </div>
-                    </label>
+        try {
+            const res = await fetch('/api/admin/personas');
+            const config = await res.json();
+            allPersonas = config.personas;
+            const selector = document.getElementById('personaSelector');
+            selector.innerHTML = allPersonas.map(p => `
+                <div class="col-6">
+                    <div class="position-relative">
+                        <input class="form-check-input position-absolute top-0 end-0 m-2" type="checkbox" value="${p.id}" id="chk_${p.id}" checked style="z-index:2;">
+                        <label class="d-flex align-items-center gap-2 p-2 border border-secondary border-opacity-25 rounded-3 bg-dark" for="chk_${p.id}" style="cursor:pointer;">
+                            <div class="fs-4">${p.avatarEmoji}</div>
+                            <div style="line-height:1.2; overflow:hidden;">
+                                <div class="fw-bold text-white small text-truncate">${p.ministry}</div>
+                                <div class="text-secondary" style="font-size:10px;">${p.name}</div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
-            </div>
-        `).join('');
-        new bootstrap.Modal(document.getElementById('roomModal')).show();
+            `).join('');
+            new bootstrap.Modal(document.getElementById('roomModal')).show();
+        } catch (e) { console.error(e); }
     }
 
     // --- CREATE ROOM ---
     async function createRoom() {
-        const name = document.getElementById('roomNameInput').value;
+        const name = document.getElementById('roomNameInput').value || "Conseil Ordinaire";
         const ids = [...document.querySelectorAll('#personaSelector input:checked')].map(c => c.value);
         
-        const res = await fetch('/api/rooms', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ name, selectedPersonaIds: ids })
-        });
-        const data = await res.json();
-        
-        if(data.ok){
-            currentRoomId = data.room.id;
-            activePersonas = allPersonas.filter(p => ids.includes(p.id));
-            document.getElementById('roomTitleDisplay').innerText = data.room.name;
-            renderSidebar();
-            
-            document.querySelector('.modal.show').classList.remove('show');
-            document.querySelector('.modal-backdrop').remove();
-            document.getElementById('roomModal').style.display = 'none';
-            document.getElementById('appShell').style.opacity = 1;
-            document.getElementById('appShell').style.pointerEvents = 'all';
-        }
+        try {
+            const res = await fetch('/api/rooms', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name, selectedPersonaIds: ids })
+            });
+            const data = await res.json();
+            if(data.ok){
+                currentRoomId = data.room.id;
+                activePersonas = allPersonas.filter(p => ids.includes(p.id));
+                document.getElementById('roomTitleDisplay').innerText = name;
+                renderSidebar();
+                bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
+                document.querySelector('.modal-backdrop')?.remove();
+            }
+        } catch(e) { alert("Erreur: " + e.message); }
     }
 
-    function renderSidebar(){
+    function renderSidebar() {
         document.getElementById('activePersonasCol').innerHTML = activePersonas.map(p => `
-            <div class="d-flex align-items-center gap-2 p-2 rounded bg-white bg-opacity-5">
-                <div class="avatar bg-transparent">${p.avatarEmoji}</div>
+            <div class="persona-item">
+                <div class="persona-avatar">${p.avatarEmoji}</div>
                 <div class="overflow-hidden">
-                    <div class="fw-bold small text-white text-truncate">${p.ministry}</div>
+                    <div class="fw-bold text-white" style="font-size:12px;">${p.ministry}</div>
+                    <div class="text-secondary text-truncate" style="font-size:10px;">${p.role}</div>
                 </div>
             </div>
         `).join('');
     }
 
-    // --- UPLOAD ---
-    async function uploadRag(){
+    // --- UPLOAD RAG ---
+    async function uploadRag() {
         const file = document.getElementById('ragInput').files[0];
         if(!file) return;
         const status = document.getElementById('statusIndicator');
-        status.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Envoi au secrétariat...`;
-        
+        status.innerHTML = `<span class="spinner-border spinner-border-sm me-2" style="width:10px;height:10px;"></span> Analyse de ${file.name}...`;
         const fd = new FormData(); fd.append('file', file);
-        const res = await fetch(`/api/rooms/${currentRoomId}/ingest`, {method:'POST', body:fd});
-        const d = await res.json();
-        
-        if(d.ok) {
-            status.innerText = "Document classé.";
-            addMessage("system", `📂 <strong>${file.name}</strong> a été ajouté au dossier.`);
-        } else {
-            status.innerText = "Erreur.";
-            alert(d.error);
-        }
+        try {
+            const res = await fetch(`/api/rooms/${currentRoomId}/ingest`, {method:'POST', body:fd});
+            const d = await res.json();
+            if(d.ok) {
+                status.innerHTML = "";
+                // Ajouter à la liste visuelle droite
+                ragFilesList.push({ name: file.name, type: 'PDF' });
+                renderInspectorFiles();
+                addMessage("system", `📂 Document <strong>${file.name}</strong> ajouté au dossier.`);
+                // Ouvrir l'inspecteur pour montrer le fichier
+                document.getElementById('appInspector').classList.remove('collapsed');
+            } else { status.innerText = "Erreur upload."; alert(d.error); }
+        } catch(e) { status.innerText = "Erreur réseau"; }
     }
 
-    // --- CHAT ORCHESTRÉ ---
-    async function sendMessage(){
+    function renderInspectorFiles() {
+        const container = document.getElementById('inspectorFileList');
+        if(ragFilesList.length === 0) {
+            container.innerHTML = `<div class="text-center text-secondary small py-4 opacity-50 fst-italic">Aucun document joint</div>`;
+            return;
+        }
+        container.innerHTML = ragFilesList.map(f => `
+            <div class="file-card">
+                <div class="file-icon"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                <div class="file-info">
+                    <div class="file-name" title="${f.name}">${f.name}</div>
+                    <div class="file-meta">Indexé • Prêt pour RAG</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- ASYNC CHAT LOGIC WITH POLLING ---
+    async function sendMessage() {
+        if(isPolling) return;
         const input = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
         const text = input.value.trim();
         if(!text) return;
 
-        input.value = '';
-        input.style.height = 'auto';
+        input.value = ''; input.style.height = 'auto';
+        document.querySelector('.empty-state')?.remove();
+        sendBtn.disabled = true;
 
-        // 1. Mon message
-        addMessage("me", text);
-
-        // 2. Appel Unique
+        addMessage('me', text);
         const status = document.getElementById('statusIndicator');
-        status.innerHTML = `<span class="thinking-dots">Consultation des ministères</span>`;
+        status.innerHTML = `<span class="thinking-dots">L'orchestrateur consulte les ministères</span>`;
 
         try {
+            // 1. Lance la tâche
             const res = await fetch('/api/chat/n8n', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ roomId: currentRoomId, message: text })
             });
-
-            const backendRes = await res.json();
-
-            if (backendRes.ok) {
-                const data = backendRes.data;
-                // n8n renvoie { responses: [ { ministry: "...", text: "..." } ] }
-                if (data.responses && Array.isArray(data.responses)) {
-                    data.responses.forEach(r => {
-                        // Trouver l'emoji correspondant
-                        const p = activePersonas.find(ap => ap.ministry === r.ministry);
-                        addMessage("bot", r.text, { 
-                            name: r.ministry, 
-                            avatar: p ? p.avatarEmoji : "🏛️" 
-                        });
-                    });
-                } else if (data.response) {
-                    // Fallback texte simple
-                    addMessage("bot", data.response, { name: "Secrétariat", avatar: "📝" });
-                }
+            const initRes = await res.json();
+            
+            if (initRes.ok && initRes.taskId) {
+                // 2. Poll pour le résultat
+                pollTask(initRes.taskId);
             } else {
-                throw new Error(backendRes.error);
+                throw new Error(initRes.error || "Erreur d'initialisation de tâche");
             }
-        } catch (e) {
-            addMessage("system", `Erreur technique : ${e.message}`);
-        } finally {
+        } catch (e) { 
+            addMessage('system', `❌ Erreur : ${e.message}`); 
             status.innerHTML = '';
+            sendBtn.disabled = false;
+        } 
+    }
+
+    async function pollTask(taskId) {
+        isPolling = true;
+        const statusEl = document.getElementById('statusIndicator');
+        const sendBtn = document.getElementById('sendBtn');
+        const pollInterval = 2000; // 2s
+
+        const check = async () => {
+            try {
+                const res = await fetch(`/api/chat/task/${taskId}`);
+                const json = await res.json();
+                
+                if(json.status === 'completed') {
+                    // Success!
+                    isPolling = false;
+                    statusEl.innerHTML = '';
+                    sendBtn.disabled = false;
+                    
+                    let n8nData = json.data.data; // Structure might vary depending on n8n webhook response wrapper
+                    if (!n8nData && json.data) n8nData = json.data;
+                    
+                    // Handle array response from n8n
+                    if (Array.isArray(n8nData)) n8nData = n8nData[0];
+                    
+                    renderResponse(n8nData);
+
+                } else if (json.status === 'error') {
+                    throw new Error(json.error);
+                } else {
+                    // Still processing
+                    setTimeout(check, pollInterval);
+                }
+            } catch(e) {
+                isPolling = false;
+                statusEl.innerHTML = '';
+                sendBtn.disabled = false;
+                addMessage('system', `❌ Erreur de traitement : ${e.message}`);
+            }
+        }
+        check();
+    }
+
+    function renderResponse(n8nData) {
+        let hasContent = false;
+        
+        console.log("Rendering Data:", n8nData);
+
+        if(n8nData.global_synthesis) {
+            addMessage('synthesis', n8nData.global_synthesis, { name: "Synthèse du Conseil", avatar: "🏛️" });
+            hasContent = true;
+        }
+        if(n8nData.responses && Array.isArray(n8nData.responses)) {
+            n8nData.responses.forEach(r => {
+                addMessage('bot', r.text, {
+                    name: r.ministry_name || "Ministère",
+                    avatar: r.avatar_emoji || "👤",
+                    isSubItem: true
+                }, r.rag_sources);
+            });
+            hasContent = true;
+        }
+        if(!hasContent && n8nData.response) {
+            addMessage('bot', n8nData.response, { name: "Secrétariat", avatar: "📝" });
+            hasContent = true;
+        }
+        if(!hasContent) {
+            addMessage('system', `<span class="text-warning">Format brut reçu</span><br><pre style="font-size:10px; max-height:100px; overflow:auto;">${JSON.stringify(n8nData, null, 2)}</pre>`);
         }
     }
 
-    function addMessage(type, text, meta = {}) {
+    function addMessage(type, text, meta = {}, sources = []) {
         const wrap = document.getElementById('chatWrap');
-        if(wrap.querySelector('.text-center.text-muted')) wrap.innerHTML = ''; // Clear empty state
-
         const div = document.createElement('div');
-        div.className = `msg ${type}`;
         
-        let content = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-        if(type === 'me') {
-            div.innerHTML = `<div class="msg-content">${content}</div>`;
-        } else if(type === 'system') {
-            div.className = "text-center my-3 small text-secondary opacity-75";
-            div.innerHTML = content;
+        if (type === 'system') {
+            div.className = "text-center my-3 small text-secondary opacity-75 font-monospace";
+            div.innerHTML = text;
         } else {
-            // Bot message with Avatar
-            div.innerHTML = `
-                <div class="avatar">${meta.avatar || '🤖'}</div>
-                <div style="max-width:85%">
-                    <div class="small fw-bold text-secondary mb-1 ms-1">${meta.name || 'IA'}</div>
-                    <div class="msg-content">${content}</div>
-                </div>
-            `;
+            const isMe = type === 'me';
+            let classes = `message-row ${isMe ? 'me' : (type === 'synthesis' ? 'synthesis' : 'bot')}`;
+            if(meta.isSubItem) classes += ' sub-message';
+
+            div.className = classes;
+            
+            let content = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            if(sources && sources.length > 0) {
+                content += `<div class="rag-sources">`;
+                sources.forEach(s => {
+                    content += `<span class="rag-chip" title="Page ${s.page}"><i class="bi bi-file-earmark-pdf-fill"></i> ${s.filename}</span>`;
+                });
+                content += `</div>`;
+            }
+
+            const avatarHtml = !isMe ? `<div class="message-avatar-container"><div class="message-avatar">${meta.avatar || '🤖'}</div></div>` : '';
+            const senderHtml = !isMe ? `<div class="message-sender">${meta.name || 'IA'}</div>` : '';
+
+            div.innerHTML = `${avatarHtml}<div class="message-bubble-container">${senderHtml}<div class="message-bubble">${content}</div></div>`;
         }
         wrap.appendChild(div);
-        wrap.scrollTop = wrap.scrollHeight;
+        const main = document.querySelector('.chat-content');
+        main.scrollTop = main.scrollHeight;
     }
 
     document.getElementById('chatInput').addEventListener('keypress', e => {
