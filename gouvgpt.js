@@ -19,6 +19,9 @@ const crypto = require('crypto');
 const app = express();
 const PORT = Number(process.env.PORT || 4321);
 
+// URL du Webhook Orchestrateur n8n défini par l'utilisateur
+const N8N_CHAT_WEBHOOK = "https://n8n.fintrax.org/webhook/chat";
+
 // --- 1. Configuration des Chemins & Stockage JSON ---
 const PUBLIC_PATH = path.join(__dirname, 'public');
 const DATA_PATH = path.join(PUBLIC_PATH, 'data');
@@ -32,13 +35,13 @@ const ROOMS_DATA_PATH = path.join(DATA_PATH, 'rooms.json');
   if (!fssync.existsSync(d)) fssync.mkdirSync(d, { recursive: true });
 });
 
-// Personas par défaut (si le fichier config n'existe pas)
+// Personas par défaut
 const DEFAULT_PERSONAS = [
-    { id: "pm", name: "Premier Ministre", role: "Chair", ministry: "Primature", n8n_webhook: "", color: "#22c55e", avatarEmoji: "🟢", description: "Arbitrage et synthèse." },
-    { id: "fin", name: "Ministre des Finances", role: "SME", ministry: "Finances", n8n_webhook: "", color: "#f59e0b", avatarEmoji: "🟠", description: "Budget et soutenabilité." },
-    { id: "just", name: "Ministre de la Justice", role: "SME", ministry: "Justice", n8n_webhook: "", color: "#ef4444", avatarEmoji: "🔴", description: "Légalité et conformité." },
-    { id: "def", name: "Ministre de la Défense", role: "SME", ministry: "Défense", n8n_webhook: "", color: "#64748b", avatarEmoji: "⚫", description: "Sécurité et souveraineté." },
-    { id: "sante", name: "Ministre de la Santé", role: "SME", ministry: "Santé", n8n_webhook: "", color: "#0ea5e9", avatarEmoji: "🔵", description: "Santé publique." }
+    { id: "pm", name: "Premier Ministre", role: "Chair", ministry: "Primature", color: "#22c55e", avatarEmoji: "🟢" },
+    { id: "fin", name: "Ministre des Finances", role: "SME", ministry: "Finances", color: "#f59e0b", avatarEmoji: "🟠" },
+    { id: "just", name: "Ministre de la Justice", role: "SME", ministry: "Justice", color: "#ef4444", avatarEmoji: "🔴" },
+    { id: "def", name: "Ministre de la Défense", role: "SME", ministry: "Défense", color: "#64748b", avatarEmoji: "⚫" },
+    { id: "sante", name: "Ministre de la Santé", role: "SME", ministry: "Santé", color: "#0ea5e9", avatarEmoji: "🔵" }
 ];
 
 // --- 2. Initialisation MinIO (S3) ---
@@ -51,18 +54,13 @@ const minioClient = new Minio.Client({
 });
 const MINIO_BUCKET = process.env.MINIO_BUCKET || 'gouvbrain-rag-docs';
 
-// Initialisation du bucket au démarrage
+// Initialisation du bucket
 (async () => {
   try {
     const exists = await minioClient.bucketExists(MINIO_BUCKET);
-    if (!exists) {
-      await minioClient.makeBucket(MINIO_BUCKET, 'us-east-1');
-      console.log(`[MinIO] Bucket '${MINIO_BUCKET}' créé avec succès.`);
-    } else {
-      console.log(`[MinIO] Connecté au bucket '${MINIO_BUCKET}'.`);
-    }
+    if (!exists) await minioClient.makeBucket(MINIO_BUCKET, 'us-east-1');
   } catch (err) {
-    console.warn("[MinIO] Attention: Impossible de se connecter à MinIO (Mode dégradé).", err.message);
+    console.warn("[MinIO] Mode dégradé (Pas de connexion S3).", err.message);
   }
 })();
 
@@ -76,63 +74,48 @@ app.use(express.static(PUBLIC_PATH));
 
 const upload = multer({ dest: UPLOADS_DIR });
 
-// Helpers JSON (Base de données fichier)
+// Helpers JSON
 async function readJson(file, defaultVal) {
-  try {
-    const data = await fs.readFile(file, 'utf8');
-    return JSON.parse(data);
-  } catch { return defaultVal; }
+  try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch { return defaultVal; }
 }
 async function writeJson(file, data) {
   await fs.writeFile(file, JSON.stringify(data, null, 2), 'utf8');
 }
 
-// --- ROUTES API : GESTION DES SALONS (ROOMS) ---
+// --- ROUTES API : SALONS ---
 
-// Créer un salon avec sélection des personas
 app.post('/api/rooms', async (req, res) => {
   try {
     const { name, selectedPersonaIds } = req.body;
-    const roomId = crypto.randomUUID();
-    
-    // Charger la config des personas pour valider
     const config = await readJson(PERSONAS_CONFIG_PATH, { personas: DEFAULT_PERSONAS });
     const allIds = config.personas.map(p => p.id);
-    
-    // Si aucun sélectionné, on prend tout le monde par défaut
     const activePersonas = (selectedPersonaIds && selectedPersonaIds.length) ? selectedPersonaIds : allIds;
 
     const roomsData = await readJson(ROOMS_DATA_PATH, { rooms: [] });
-    
     const newRoom = {
-      id: roomId,
-      name: name || `Conseil du ${new Date().toLocaleDateString()}`,
+      id: crypto.randomUUID(),
+      name: name || `Session du ${new Date().toLocaleDateString()}`,
       createdAt: new Date().toISOString(),
       activePersonas: activePersonas,
-      files: [] // Liste des documents RAG partagés dans ce salon
+      files: [] 
     };
 
     roomsData.rooms.push(newRoom);
     await writeJson(ROOMS_DATA_PATH, roomsData);
-
     res.json({ ok: true, room: newRoom });
   } catch (e) {
-    console.error(e);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
 
-// --- ROUTES API : INGESTION RAG (MinIO) ---
+// --- ROUTES API : INGESTION RAG ---
 
-// Upload d'un fichier RAG dans un salon spécifique
 app.post('/api/rooms/:roomId/ingest', upload.single('file'), async (req, res) => {
   try {
     const { roomId } = req.params;
     const file = req.file;
-    if (!file) throw new Error("Aucun fichier reçu.");
+    if (!file) throw new Error("Aucun fichier.");
 
-    // 1. Upload vers MinIO
-    // Structure: bucket/room_id/timestamp_filename
     const objectName = `${roomId}/${Date.now()}_${file.originalname}`;
     const fileStream = fssync.createReadStream(file.path);
     const stats = await fs.stat(file.path);
@@ -140,135 +123,125 @@ app.post('/api/rooms/:roomId/ingest', upload.single('file'), async (req, res) =>
     let minioUrl = "";
     try {
       await minioClient.putObject(MINIO_BUCKET, objectName, fileStream, stats.size);
-      // Générer une URL signée pour que n8n puisse récupérer le fichier
-      // Valide 7 jours (ou configurez n8n avec les creds MinIO directement)
-      minioUrl = await minioClient.presignedGetObject(MINIO_BUCKET, objectName, 7 * 24 * 60 * 60);
+      // URL signée valable 24h pour n8n
+      minioUrl = await minioClient.presignedGetObject(MINIO_BUCKET, objectName, 24*60*60);
     } catch (err) {
-      console.error("[Ingest] MinIO Error:", err.message);
-      // Fallback local pour dev si MinIO n'est pas dispo
+      console.error("[MinIO] Error:", err.message);
       minioUrl = `file://${file.path}`; 
     }
 
-    // 2. Mettre à jour la Room dans rooms.json
     const roomsData = await readJson(ROOMS_DATA_PATH, { rooms: [] });
-    const roomIndex = roomsData.rooms.findIndex(r => r.id === roomId);
-    
-    if (roomIndex === -1) throw new Error("Salon introuvable.");
+    const room = roomsData.rooms.find(r => r.id === roomId);
+    if (!room) throw new Error("Salon introuvable.");
 
     const newDoc = {
       id: crypto.randomUUID(),
       name: file.originalname,
       minioKey: objectName,
       downloadUrl: minioUrl,
-      uploadedAt: new Date().toISOString(),
-      visibleTo: 'all' // Pourrait être filtré par persona ici
+      type: file.mimetype,
+      uploadedAt: new Date().toISOString()
     };
 
-    roomsData.rooms[roomIndex].files.push(newDoc);
+    room.files.push(newDoc);
     await writeJson(ROOMS_DATA_PATH, roomsData);
 
-    // Nettoyage temporaire (sauf si mode dev sans minio)
-    if (!minioUrl.startsWith('file://')) {
-        try { await fs.unlink(file.path); } catch {}
-    }
-
-    // 3. (Optionnel) Trigger un webhook "Systeme" n8n pour indexer immédiatement dans Qdrant
-    // fetch(process.env.N8N_INDEXER_WEBHOOK, { ... })
+    if (!minioUrl.startsWith('file://')) try { await fs.unlink(file.path); } catch {}
 
     res.json({ ok: true, document: newDoc });
   } catch (e) {
-    console.error(e);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
 
-// --- ROUTES API : CHAT (Proxy vers n8n) ---
+// --- ROUTES API : CHAT ORCHESTRÉ (Nouveau) ---
 
 app.post('/api/chat/n8n', async (req, res) => {
   try {
-    const { roomId, personaId, message } = req.body;
+    // 1. Récupération des données envoyées par le frontend
+    const { roomId, message, activeMinistriesIds, model } = req.body;
     
-    // 1. Charger la config du Persona (pour avoir l'URL du webhook n8n)
-    const config = await readJson(PERSONAS_CONFIG_PATH, { personas: [] });
-    const persona = config.personas.find(p => p.id === personaId);
-    
-    if (!persona) throw new Error("Persona introuvable.");
-    
-    // 2. Charger le contexte du salon (fichiers RAG)
+    // 2. Chargement des données contextuelles (Config & Salon)
+    const config = await readJson(PERSONAS_CONFIG_PATH, { personas: DEFAULT_PERSONAS });
     const roomsData = await readJson(ROOMS_DATA_PATH, { rooms: [] });
     const room = roomsData.rooms.find(r => r.id === roomId);
     
-    // Récupérer les URLs des fichiers pour que n8n puisse les lire
-    const ragContext = room ? room.files.map(f => ({
-        name: f.name,
-        url: f.downloadUrl,
-        key: f.minioKey
-    })) : [];
+    if (!room) throw new Error("Salon expiré ou introuvable.");
 
-    // Payload envoyé à n8n
+    // 3. Construction des listes de ministères
+    // A) Ministères présents dans le salon (Scope global)
+    const participatingMinistries = config.personas
+        .filter(p => room.activePersonas.includes(p.id))
+        .map(p => ({
+            id: p.id,
+            name: p.name,
+            ministry: p.ministry,
+            role: p.role,
+            system_prompt: p.systemPrompt || "Expert gouvernemental."
+        }));
+
+    // B) Ministères actifs pour CETTE question (si spécifié par l'UI, sinon tous)
+    const targetIds = (activeMinistriesIds && activeMinistriesIds.length) ? activeMinistriesIds : room.activePersonas;
+    const activeMinistries = participatingMinistries.filter(p => targetIds.includes(p.id));
+
+    // 4. Gestion du fichier joint (On prend le dernier uploadé pour le contexte immédiat, ou tous)
+    // Ici on envoie la liste complète des fichiers du salon pour le RAG
+    const ragFiles = room.files.map(f => ({
+        filename: f.name,
+        url: f.downloadUrl,
+        uploaded_at: f.uploadedAt
+    }));
+
+    // 5. Construction du Payload exact demandé par n8n
     const payloadForN8n = {
-      user_query: message,
-      room_id: roomId,
-      persona: {
-        id: persona.id,
-        name: persona.name,
-        ministry: persona.ministry,
-        system_prompt: persona.systemPrompt || "Tu es un expert gouvernemental."
-      },
-      // Le contexte RAG : n8n utilisera ces liens ou la clé MinIO pour vectoriser/chercher dans Qdrant
-      rag_documents: ragContext 
+        question: message,
+        model: model || "gpt-4o", // Défaut si non spécifié
+        room_id: roomId,
+        exchange_context: {
+            participating_ministries: participatingMinistries, // Tous les présents
+            active_ministries: activeMinistries,               // Ceux qui doivent répondre
+            all_files: ragFiles,                               // Contexte global RAG
+            last_file: ragFiles.length > 0 ? ragFiles[ragFiles.length - 1] : null // Le dernier fichier (focus)
+        },
+        timestamp: new Date().toISOString()
     };
 
-    console.log(`[n8n Proxy] Envoi vers ${persona.name} (${persona.n8n_webhook || 'Pas de webhook'})`);
+    console.log(`[Orchestrateur] Envoi vers ${N8N_CHAT_WEBHOOK}`);
+    console.log(`[Orchestrateur] Question: "${message.substring(0, 50)}..." | Ministres actifs: ${activeMinistries.length}`);
 
-    if (persona.n8n_webhook && persona.n8n_webhook.startsWith('http')) {
-      const n8nRes = await fetch(persona.n8n_webhook, {
+    // 6. Appel au Webhook Unique n8n
+    const n8nRes = await fetch(N8N_CHAT_WEBHOOK, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-GouvBrain-Source': 'node-backend'
+        },
         body: JSON.stringify(payloadForN8n)
-      });
-      
-      if (!n8nRes.ok) throw new Error(`Erreur n8n: ${n8nRes.statusText}`);
-      
-      const json = await n8nRes.json();
-      // On s'attend à une clé 'response' ou 'text' de n8n
-      res.json({ ok: true, response: json.response || json.output || json.text || "Réponse vide de n8n." });
-    } else {
-      // Simulation si pas de webhook configuré
-      res.json({ ok: true, response: `(Simulation ${persona.ministry}) Je n'ai pas de webhook n8n configuré, mais j'ai accès à ${ragContext.length} documents partagés.` });
+    });
+
+    if (!n8nRes.ok) {
+        const errTxt = await n8nRes.text();
+        throw new Error(`Erreur n8n (${n8nRes.status}): ${errTxt.substring(0, 200)}`);
     }
 
+    const jsonResponse = await n8nRes.json();
+    
+    // 7. Renvoi au Frontend
+    // On s'attend à ce que n8n renvoie un tableau de réponses ou une réponse consolidée
+    res.json({ 
+        ok: true, 
+        data: jsonResponse 
+    });
+
   } catch (e) {
-    console.error(e);
-    res.status(502).json({ ok: false, error: e.message });
+    console.error("[Chat Error]", e);
+    res.status(502).json({ ok: false, error: "Le conseil est momentanément indisponible.", details: e.message });
   }
 });
 
-// --- ROUTES API : ADMINISTRATION ---
-
-// Récupérer la config des personas
-app.get('/api/admin/personas', async (req, res) => {
-  const config = await readJson(PERSONAS_CONFIG_PATH, { personas: DEFAULT_PERSONAS });
-  res.json(config);
-});
-
-// Mettre à jour la config des personas (URLs n8n, prompts)
-app.post('/api/admin/personas', async (req, res) => {
-  try {
-    const newConfig = { personas: req.body.personas, updatedAt: new Date() };
-    await writeJson(PERSONAS_CONFIG_PATH, newConfig);
-    res.json({ ok: true });
-  } catch(e) {
-    res.status(500).json({ok: false, error: e.message});
-  }
-});
-
-// --- SERVING VUES ---
+// --- ADMIN & VIEWS ---
+app.get('/api/admin/personas', async (req, res) => res.json(await readJson(PERSONAS_CONFIG_PATH, { personas: DEFAULT_PERSONAS })));
 app.get('/admin', (req, res) => res.render('admin'));
-app.get('/', (req, res) => res.render('gouvgpt')); // Page principale (Salon)
+app.get('/', (req, res) => res.render('gouvgpt'));
 
-// Lancement
-app.listen(PORT, () => {
-  console.log(`\n🚀 GouvBrain démarré sur http://localhost:${PORT}`);
-  console.log(`🔧 Admin Panel sur http://localhost:${PORT}/admin`);
-});
+app.listen(PORT, () => console.log(`\n🏛️  GouvBrain Orchestrator running on port ${PORT}`));
