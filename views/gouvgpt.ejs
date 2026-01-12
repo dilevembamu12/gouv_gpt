@@ -303,7 +303,7 @@
     }
     .rag-chip i { font-size: 12px; color: #ff5252; }
 
-    /* --- INPUT AREA --- */
+    /* --- INPUT AREA & MENTION LIST --- */
     .input-wrapper {
         position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 0 24px 0; z-index: 50;
         background: linear-gradient(to top, var(--c-bg-body) 20%, transparent 100%);
@@ -312,16 +312,62 @@
 
     .input-container {
         width: 100%; max-width: 800px;
-        background: rgba(30, 30, 30, 0.75);
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        background: rgba(30, 30, 30, 0.85);
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
         border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
         padding: 12px; display: flex; flex-direction: column; gap: 8px;
         box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2); transition: all 0.2s ease-in-out; margin: 0 16px;
+        position: relative;
     }
     .input-container:focus-within {
         border-color: rgba(0, 111, 238, 0.5);
         box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 111, 238, 0.2);
         background: rgba(30, 30, 30, 0.95);
+    }
+
+    /* --- MENTION LIST (Telegram Style) --- */
+    .mention-list {
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        margin-bottom: 8px;
+        background: rgba(30, 30, 30, 0.95);
+        border: 1px solid var(--c-border);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        width: 260px;
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none; /* Caché par défaut */
+        padding: 6px;
+        backdrop-filter: blur(10px);
+    }
+    .mention-list.show { display: block; animation: slideUp 0.15s ease-out; }
+    
+    .mention-item {
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        border-radius: 8px;
+        color: var(--c-text-primary);
+        font-size: 13px;
+        transition: background 0.1s;
+    }
+    .mention-item:hover, .mention-item.selected {
+        background: rgba(0, 111, 238, 0.15); 
+    }
+    .mention-item.selected {
+        border-left: 3px solid #006fee;
+    }
+
+    .mention-avatar {
+        width: 24px; height: 24px;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(255,255,255,0.05);
+        border-radius: 6px; font-size: 14px;
     }
 
     .input-header { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
@@ -359,6 +405,28 @@
     .footer-text { font-size: 11px; color: var(--c-text-tertiary); margin-top: 8px; text-align: center; opacity: 0.6; }
     .typing-indicator { font-size: 11px; color: var(--c-text-tertiary); min-height: 17px; margin-bottom: 4px; padding-left: 10px; }
 
+    /* --- PROMPT LIBRARY STYLES --- */
+    .prompt-card {
+        background: var(--c-bg-input);
+        border: 1px solid var(--c-border);
+        border-radius: 12px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .prompt-card:hover {
+        background: var(--c-bg-card);
+        border-color: #006fee;
+        transform: translateY(-2px);
+    }
+    .prompt-icon { font-size: 20px; margin-bottom: 4px; }
+    .prompt-title { font-weight: 600; font-size: 13px; color: var(--c-text-primary); }
+    .prompt-desc { font-size: 11px; color: var(--c-text-tertiary); line-height: 1.4; }
+
     /* Modal & Utils */
     .modal-content { background-color: #1e1e1e; border: 1px solid var(--c-border); border-radius: 20px; }
     .modal-header { border-bottom: 1px solid var(--c-border); }
@@ -368,6 +436,7 @@
     .thinking-dots::after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
     @keyframes dots { 0%, 20% { content: ' .'; } 40% { content: ' ..'; } 60% { content: ' ...'; } 80%, 100% { content: ' ....'; } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
     /* Mobile */
     @media (max-width: 900px) {
@@ -399,6 +468,24 @@
           <button type="button" class="btn btn-primary w-100 py-2 fw-bold" style="background:#006fee; border:none; border-radius:10px;" onclick="createRoom()">
             Démarrer le Conseil
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT LIBRARY MODAL -->
+  <div class="modal fade" id="promptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold"><i class="bi bi-stars text-warning me-2"></i>Bibliothèque de Prompts</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pt-2">
+            <p class="text-secondary small mb-4">Sélectionnez un modèle pour démarrer rapidement.</p>
+            <div class="row g-3" id="promptGrid">
+                <!-- Prompts injected here -->
+            </div>
         </div>
       </div>
     </div>
@@ -453,13 +540,17 @@
     <div class="input-wrapper">
         <div class="typing-indicator" id="statusIndicator"></div>
         <div class="input-container">
+            
+            <!-- POPUP MENTIONS -->
+            <div id="mentionList" class="mention-list"></div>
+
             <div class="input-header">
                  <div class="input-tools-left">
                     <input type="file" id="ragInput" hidden onchange="uploadRag()">
                     <button class="tool-btn" onclick="document.getElementById('ragInput').click()" title="Joindre un fichier">
                         <i class="bi bi-paperclip"></i>
                     </button>
-                    <button class="tool-btn" title="Bibliothèque de Prompts (Bientôt)">
+                    <button class="tool-btn" onclick="openPromptLibrary()" title="Bibliothèque de Prompts">
                         <i class="bi bi-stars"></i>
                     </button>
                     <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 6px 4px;"></div>
@@ -468,7 +559,7 @@
                     </button>
                  </div>
             </div>
-            <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="Posez une question au Conseil des Ministres..."></textarea>
+            <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="Posez une question au Conseil des Ministres... Tapez '@' pour solliciter un ministère."></textarea>
             <div class="input-footer">
                 <div class="model-selector" title="Modèle Actif">
                     <i class="bi bi-lightning-charge-fill model-icon"></i>
@@ -525,6 +616,172 @@
     let activePersonas = [];
     let ragFilesList = [];
     let isPolling = false;
+
+    // --- PROMPT LIBRARY DATA & LOGIC ---
+    const PROMPTS = [
+        { icon: "💰", title: "Analyse Budgétaire", text: "Quels sont les impacts budgétaires à court et long terme de cette mesure sur les finances publiques ?", desc: "Évaluation financière et fiscale." },
+        { icon: "⚖️", title: "Risque Juridique", text: "Identifiez les risques d'inconstitutionnalité ou de contentieux européen liés à ce projet de loi.", desc: "Analyse de conformité légale." },
+        { icon: "🌍", title: "Impact Écologique", text: "Quelle est l'empreinte carbone estimée de ce projet et sa compatibilité avec nos engagements climatiques ?", desc: "Évaluation environnementale." },
+        { icon: "📣", title: "Éléments de Langage", text: "Proposez des éléments de langage pour défendre cette réforme face aux critiques de l'opposition.", desc: "Stratégie de communication." },
+        { icon: "🤝", title: "Synthèse Sociale", text: "Quels sont les points de friction prévisibles avec les partenaires sociaux et comment les désamorcer ?", desc: "Analyse du climat social." },
+        { icon: "🚨", title: "Gestion de Crise", text: "Proposez un plan d'action immédiat pour répondre à l'urgence sanitaire signalée.", desc: "Réponse opérationnelle rapide." }
+    ];
+
+    function openPromptLibrary() {
+        const grid = document.getElementById('promptGrid');
+        grid.innerHTML = PROMPTS.map(p => `
+            <div class="col-md-4 col-sm-6">
+                <div class="prompt-card" onclick="usePrompt('${p.text.replace(/'/g, "\\'")}')">
+                    <div class="prompt-icon">${p.icon}</div>
+                    <div class="prompt-title">${p.title}</div>
+                    <div class="prompt-desc">${p.desc}</div>
+                </div>
+            </div>
+        `).join('');
+        new bootstrap.Modal(document.getElementById('promptModal')).show();
+    }
+
+    function usePrompt(text) {
+        const input = document.getElementById('chatInput');
+        input.value = text;
+        // Trigger auto-resize
+        input.style.height = 'auto'; 
+        input.style.height = (input.scrollHeight) + 'px';
+        input.focus();
+        
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('promptModal')).hide();
+    }
+
+    // --- MENTION LOGIC (Telegram Style) ---
+    const chatInput = document.getElementById('chatInput');
+    const mentionList = document.getElementById('mentionList');
+    let mentionSelectedIndex = -1;
+
+    chatInput.addEventListener('keydown', (e) => {
+        const listItems = mentionList.querySelectorAll('.mention-item');
+        
+        // Navigation dans la liste si elle est ouverte
+        if (mentionList.classList.contains('show') && listItems.length > 0) {
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                mentionSelectedIndex = (mentionSelectedIndex > 0) ? mentionSelectedIndex - 1 : listItems.length - 1;
+                updateMentionSelection(listItems);
+                return;
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                mentionSelectedIndex = (mentionSelectedIndex < listItems.length - 1) ? mentionSelectedIndex + 1 : 0;
+                updateMentionSelection(listItems);
+                return;
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                if (mentionSelectedIndex > -1 && listItems[mentionSelectedIndex]) {
+                    listItems[mentionSelectedIndex].click();
+                }
+                return;
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                mentionList.classList.remove('show');
+                return;
+            }
+        }
+
+        // Envoi classique si pas de mention active
+        if(e.key === 'Enter' && !e.shiftKey) {
+             e.preventDefault(); 
+             sendMessage(); 
+        }
+    });
+
+    chatInput.addEventListener('keyup', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'Enter', 'Tab', 'Escape'].includes(e.key)) return;
+
+        const val = chatInput.value;
+        const cursorPosition = chatInput.selectionStart;
+        
+        // Détecter le mot en cours de frappe
+        const textBeforeCursor = val.substring(0, cursorPosition);
+        const lastAt = textBeforeCursor.lastIndexOf('@');
+        
+        if (lastAt !== -1) {
+            // Vérifier si le @ est précédé d'un espace ou est en début de ligne
+            const charBeforeAt = textBeforeCursor[lastAt - 1];
+            if (lastAt === 0 || /\s/.test(charBeforeAt)) {
+                const query = textBeforeCursor.substring(lastAt + 1);
+                // Si pas d'espace dans la requête, on filtre
+                if (!/\s/.test(query)) {
+                    showMentions(query);
+                    return;
+                }
+            }
+        }
+        
+        mentionList.classList.remove('show');
+        mentionSelectedIndex = -1;
+    });
+
+    function showMentions(query) {
+        // Filtrer parmi les ministères ACTIFS
+        const filtered = activePersonas.filter(p => 
+            p.name.toLowerCase().includes(query.toLowerCase()) || 
+            p.ministry.toLowerCase().includes(query.toLowerCase())
+        );
+
+        if (filtered.length === 0) {
+            mentionList.classList.remove('show');
+            mentionSelectedIndex = -1;
+            return;
+        }
+
+        // Générer le HTML
+        mentionList.innerHTML = filtered.map((p, index) => `
+            <div class="mention-item ${index === 0 ? 'selected' : ''}" onclick="insertMention('${p.ministry}')" data-index="${index}">
+                <div class="mention-avatar">${p.avatarEmoji}</div>
+                <div>
+                    <div class="fw-bold">${p.ministry}</div>
+                    <div class="text-secondary" style="font-size:10px;">${p.name}</div>
+                </div>
+            </div>
+        `).join('');
+        
+        mentionList.classList.add('show');
+        mentionSelectedIndex = 0; // Sélectionner le premier par défaut
+    }
+
+    function updateMentionSelection(listItems) {
+        listItems.forEach((item, index) => {
+            if (index === mentionSelectedIndex) {
+                item.classList.add('selected');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    function insertMention(ministryName) {
+        const val = chatInput.value;
+        const cursorPosition = chatInput.selectionStart;
+        const textBeforeCursor = val.substring(0, cursorPosition);
+        const textAfterCursor = val.substring(cursorPosition);
+        
+        const lastAt = textBeforeCursor.lastIndexOf('@');
+        const textBeforeAt = textBeforeCursor.substring(0, lastAt);
+        
+        // Insérer le tag avec un espace après
+        const newText = textBeforeAt + `@${ministryName} ` + textAfterCursor;
+        
+        chatInput.value = newText;
+        
+        // Placer le curseur après le tag
+        const newCursorPos = lastAt + ministryName.length + 2; 
+        chatInput.setSelectionRange(newCursorPos, newCursorPos);
+        chatInput.focus();
+        
+        mentionList.classList.remove('show');
+        mentionSelectedIndex = -1;
+    }
+
 
     // --- UTILS ---
     function formatTime() {
@@ -789,10 +1046,6 @@
         const main = document.querySelector('.chat-content');
         main.scrollTop = main.scrollHeight;
     }
-
-    document.getElementById('chatInput').addEventListener('keypress', e => {
-        if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-    });
 
     init();
   </script>

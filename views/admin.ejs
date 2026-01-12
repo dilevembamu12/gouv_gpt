@@ -1,112 +1,398 @@
 <!doctype html>
 <html lang="fr" data-bs-theme="dark">
 <head>
-  <meta charset="utf-8">
-  <title>Admin GouvBrain • Configuration n8n</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GouvBrain Admin • Configuration du Cabinet</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+
   <style>
-    body { background-color: #0B1220; color: #EAF2FF; }
-    .card { background-color: #0E1A2B; border: 1px solid rgba(255,255,255,0.1); }
-    .form-control { background-color: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); color: white; }
-    .form-control:focus { background-color: rgba(255,255,255,0.1); color: white; border-color: #3b82f6; box-shadow: none; }
-    .header-bar { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 2rem; }
+    :root {
+        --c-bg-body: #000000;
+        --c-bg-sidebar: #080808;
+        --c-bg-card: #141414;
+        --c-border: #262626;
+        --c-accent: #006fee;
+        --font-sans: 'Inter', sans-serif;
+    }
+
+    body {
+        background-color: var(--c-bg-body);
+        color: white;
+        font-family: var(--font-sans);
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+    }
+
+    /* --- SIDEBAR --- */
+    .admin-sidebar {
+        width: 300px;
+        background: var(--c-bg-sidebar);
+        border-right: 1px solid var(--c-border);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        flex-shrink: 0;
+    }
+
+    .persona-nav-item {
+        padding: 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 6px;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+    .persona-nav-item:hover { background: var(--c-bg-card); }
+    .persona-nav-item.active { 
+        background: rgba(0, 111, 238, 0.1); 
+        border-color: rgba(0, 111, 238, 0.3);
+        color: var(--c-accent);
+    }
+
+    /* --- MAIN CONTENT --- */
+    .admin-main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 40px;
+        background: radial-gradient(circle at 50% 0%, #111 0%, #000 50%);
+    }
+
+    .config-section {
+        max-width: 800px;
+        margin: 0 auto;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .glass-card {
+        background: rgba(20, 20, 20, 0.6);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--c-border);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .form-label { font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; }
+    .form-control {
+        background: #000; border: 1px solid var(--c-border); color: white; border-radius: 8px; padding: 10px 14px;
+    }
+    .form-control:focus {
+        background: #000; color: white; border-color: var(--c-accent); box-shadow: 0 0 0 4px rgba(0, 111, 238, 0.1);
+    }
+
+    .knowledge-item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 12px; border-bottom: 1px solid var(--c-border);
+        background: rgba(255,255,255,0.02);
+        border-radius: 8px;
+        margin-bottom: 4px;
+    }
+
+    .btn-save { background: var(--c-accent); border: none; padding: 10px 24px; border-radius: 10px; font-weight: 600; transition: transform 0.1s; }
+    .btn-save:active { transform: scale(0.98); }
+    
+    /* Tabs Custom */
+    .nav-pills .nav-link { color: #888; background: transparent; border: 1px solid transparent; border-radius: 8px; font-size: 13px; font-weight: 500; }
+    .nav-pills .nav-link:hover { color: #ccc; background: rgba(255,255,255,0.05); }
+    .nav-pills .nav-link.active { background: rgba(255,255,255,0.1); color: white; border-color: rgba(255,255,255,0.1); }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="p-4">
-  <div class="container">
-    <div class="header-bar d-flex justify-content-between align-items-center">
-      <div>
-        <h2 class="m-0"><i class="bi bi-cpu-fill text-primary"></i> Super-Admin GouvBrain</h2>
-        <div class="text-muted small">Orchestration des Personas & Workflows n8n</div>
-      </div>
-      <a href="/" class="btn btn-outline-light"><i class="bi bi-arrow-left"></i> Retour au Salon</a>
+
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="d-flex align-items-center gap-2 mb-4 px-2">
+        <a href="/" class="btn btn-sm btn-outline-secondary rounded-circle" title="Retour au Chat"><i class="bi bi-arrow-left"></i></a>
+        <h5 class="m-0 fw-bold">GouvBrain Admin</h5>
     </div>
 
-    <div class="alert alert-info border-0 bg-opacity-10 bg-info text-info">
-      <i class="bi bi-info-circle-fill me-2"></i>
-      Chaque ministère correspond à un <strong>sous-workflow n8n</strong>. Configurez ici les Webhooks de production.
-      Les fichiers RAG sont stockés sur MinIO et passés en contexte aux workflows.
+    <div class="small text-secondary mb-3 px-2 text-uppercase fw-bold" style="font-size:11px;">Liste des Experts</div>
+    <div id="personaList" class="flex-grow-1 overflow-auto pe-2">
+        <!-- Injected JS -->
     </div>
 
-    <div id="personasContainer"></div>
+    <button class="btn btn-outline-primary w-100 mt-3" style="border-radius:10px; border-style:dashed;" onclick="createNewPersona()">
+        <i class="bi bi-plus-lg me-2"></i>Nouvel Expert
+    </button>
+  </aside>
 
-    <div class="d-grid gap-2 mt-4 mb-5">
-        <button class="btn btn-success btn-lg fw-bold" onclick="saveConfig()">
-          <i class="bi bi-save me-2"></i> Sauvegarder la Configuration
-        </button>
+  <!-- MAIN -->
+  <main class="admin-main">
+    <div id="configContainer" class="config-section">
+        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center opacity-25" style="min-height: 60vh;">
+            <i class="bi bi-person-gear" style="font-size: 64px;"></i>
+            <h3 class="mt-3">Sélectionnez un expert pour le configurer</h3>
+        </div>
     </div>
-  </div>
+  </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    let personas = [];
+    let allPersonas = [];
+    let selectedPersonaId = null;
 
     async function load() {
-      const res = await fetch('/api/admin/personas');
-      const data = await res.json();
-      personas = data.personas || [];
-      render();
+        try {
+            const res = await fetch('/api/admin/personas');
+            const data = await res.json();
+            allPersonas = data.personas;
+            renderPersonaList();
+            
+            // Restore selection if exists
+            if(selectedPersonaId) {
+                // Check if still exists
+                if(allPersonas.find(p => p.id === selectedPersonaId)) {
+                    selectPersona(selectedPersonaId);
+                } else {
+                    selectedPersonaId = null;
+                    document.getElementById('configContainer').innerHTML = `<div class="text-center py-5 opacity-25"><i class="bi bi-person-gear" style="font-size: 64px;"></i><h3 class="mt-3">Sélectionnez un expert</h3></div>`;
+                }
+            }
+        } catch(e) { console.error(e); alert("Erreur chargement"); }
     }
 
-    function render() {
-      const container = document.getElementById('personasContainer');
-      container.innerHTML = personas.map((p, idx) => `
-        <div class="card mb-3 shadow-sm">
-          <div class="card-header d-flex justify-content-between align-items-center" style="border-left: 5px solid ${p.color}; background: rgba(255,255,255,0.02);">
-            <div class="d-flex align-items-center gap-2">
-                <span style="font-size:1.5rem">${p.avatarEmoji}</span>
-                <div>
-                    <h5 class="m-0">${p.ministry}</h5>
-                    <div class="small text-muted">${p.role}</div>
+    function renderPersonaList() {
+        const container = document.getElementById('personaList');
+        container.innerHTML = allPersonas.map(p => `
+            <div class="persona-nav-item ${selectedPersonaId === p.id ? 'active' : ''}" onclick="selectPersona('${p.id}')">
+                <span class="fs-4">${p.avatarEmoji}</span>
+                <div class="overflow-hidden w-100">
+                    <div class="fw-bold text-truncate" style="font-size:14px;">${p.ministry}</div>
+                    <div class="small opacity-50 text-truncate">${p.name}</div>
                 </div>
             </div>
-            <span class="badge bg-dark border border-secondary text-secondary font-monospace">ID: ${p.id}</span>
-          </div>
-          <div class="card-body">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label small text-uppercase text-muted fw-bold">Nom d'affichage</label>
-                <input type="text" class="form-control" value="${p.name}" onchange="update(${idx}, 'name', this.value)">
-              </div>
-              <div class="col-md-8">
-                <label class="form-label small text-uppercase text-info fw-bold"><i class="bi bi-lightning-charge-fill"></i> Webhook n8n (Production)</label>
-                <input type="text" class="form-control font-monospace" placeholder="https://n8n.votredomaine.com/webhook/..." value="${p.n8n_webhook || ''}" onchange="update(${idx}, 'n8n_webhook', this.value)">
-              </div>
-              <div class="col-12">
-                <label class="form-label small text-uppercase text-muted fw-bold">Prompt Système (Contexte)</label>
-                <textarea class="form-control" rows="2" onchange="update(${idx}, 'systemPrompt', this.value)">${p.systemPrompt || p.description || ''}</textarea>
-                <div class="form-text text-muted">Ce prompt est envoyé à n8n pour initialiser le comportement du persona.</div>
-              </div>
+        `).join('');
+    }
+
+    function selectPersona(id) {
+        selectedPersonaId = id;
+        renderPersonaList();
+        const p = allPersonas.find(p => p.id === id);
+        
+        document.getElementById('configContainer').innerHTML = `
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="fs-1">${p.avatarEmoji}</div>
+                <div>
+                    <h2 class="fw-bold m-0">${p.ministry}</h2>
+                    <div class="text-secondary">${p.name}</div>
+                </div>
             </div>
-          </div>
-        </div>
-      `).join('');
+            
+            <div class="glass-card">
+                <h6 class="mb-3 fw-bold text-uppercase text-secondary" style="font-size:12px;"><i class="bi bi-person-vcard me-2"></i>Identité & Comportement</h6>
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Emoji</label>
+                        <input type="text" id="pEmoji" class="form-control text-center fs-4" value="${p.avatarEmoji}">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Nom du Ministre / Rôle</label>
+                        <input type="text" id="pName" class="form-control" value="${p.name}">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Nom du Ministère</label>
+                        <input type="text" id="pMinistry" class="form-control" value="${p.ministry}">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Instructions Système (Prompt)</label>
+                        <textarea id="pPrompt" class="form-control font-monospace text-warning" style="font-size:13px; background:#0a0a0a;" rows="6" placeholder="Tu es un expert en... Ton objectif est de...">${p.systemPrompt || ''}</textarea>
+                        <div class="small text-secondary mt-2"><i class="bi bi-info-circle me-1"></i>Définit la personnalité, le ton et les priorités de cet expert lors du débat.</div>
+                    </div>
+                </div>
+                <div class="text-end mt-4 pt-3 border-top border-secondary border-opacity-10">
+                    <button class="btn btn-danger btn-sm opacity-50 me-2" onclick="deletePersona('${p.id}')">Supprimer l'Expert</button>
+                    <button class="btn btn-primary btn-save" onclick="savePersona()"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="m-0 fw-bold text-uppercase text-secondary" style="font-size:12px;"><i class="bi bi-database-fill-check me-2"></i>Base de Connaissances (Qdrant)</h6>
+                    <span class="badge bg-secondary bg-opacity-25 text-secondary">${(p.knowledge || []).length} docs</span>
+                </div>
+                
+                <ul class="nav nav-pills mb-3 gap-2">
+                    <li class="nav-item">
+                        <button class="nav-link active py-1 px-3" data-bs-toggle="pill" data-bs-target="#pane-file" type="button"><i class="bi bi-file-earmark-pdf me-2"></i>Fichier PDF/Doc</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link py-1 px-3" data-bs-toggle="pill" data-bs-target="#pane-text" type="button"><i class="bi bi-fonts me-2"></i>Texte Brut</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content mb-4 p-3 rounded" style="background:#0a0a0a; border:1px dashed #333;">
+                    <!-- TAB FICHIER -->
+                    <div class="tab-pane fade show active" id="pane-file">
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="file" id="pKnowledgeFile" class="form-control border-0 bg-transparent ps-0">
+                            <button id="btnUpload" class="btn btn-sm btn-light px-3 fw-bold flex-shrink-0" onclick="uploadPermanentKnowledge('${p.id}')">
+                                <i class="bi bi-cloud-upload me-2"></i>Indexer Fichier
+                            </button>
+                        </div>
+                        <div class="small text-secondary mt-2 ms-2 opacity-75">Formats supportés : PDF, DOCX, TXT.</div>
+                    </div>
+                    
+                    <!-- TAB TEXTE -->
+                    <div class="tab-pane fade" id="pane-text">
+                        <input type="text" id="pKnowledgeTitle" class="form-control mb-2" placeholder="Titre de la note (ex: Mémo Stratégie 2026)" style="background: #111;">
+                        <textarea id="pKnowledgeText" class="form-control mb-2" rows="5" placeholder="Collez ici le contenu textuel à mémoriser..." style="background: #111;"></textarea>
+                        <div class="text-end">
+                            <button id="btnUploadText" class="btn btn-sm btn-light px-3 fw-bold" onclick="uploadPermanentTextKnowledge('${p.id}')">
+                                <i class="bi bi-plus-lg me-2"></i>Ajouter cette Note
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="knowledgeList" class="d-flex flex-column gap-2">
+                    ${(p.knowledge || []).length === 0 ? '<div class="text-center text-muted fst-italic py-3">Aucun document permanent</div>' : ''}
+                    ${(p.knowledge || []).slice().reverse().map(f => `
+                        <div class="knowledge-item">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-file-earmark-text fs-5 text-info opacity-75"></i>
+                                <div>
+                                    <div class="fw-bold" style="font-size:13px;">${f.name}</div>
+                                    <div class="text-secondary" style="font-size:11px;">Ajouté le ${new Date(f.date).toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                            <i class="bi bi-check-circle-fill text-success" title="Indexé"></i>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
     }
 
-    function update(idx, field, value) {
-      personas[idx][field] = value;
+    function createNewPersona() {
+        const id = 'p_' + Math.random().toString(36).substr(2, 9);
+        const newP = { 
+            id, 
+            name: "Nouvel Expert", 
+            ministry: "Domaine d'Expertise", 
+            avatarEmoji: "👤", 
+            systemPrompt: "Tu es un expert gouvernemental. Ta mission est de fournir des analyses précises basées sur les documents fournis.", 
+            knowledge: [] 
+        };
+        // Optimistic update
+        allPersonas.push(newP);
+        selectedPersonaId = id;
+        renderPersonaList();
+        selectPersona(id);
     }
 
-    async function saveConfig() {
-      const btn = document.querySelector('button.btn-success');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Sauvegarde...';
-      btn.disabled = true;
+    async function savePersona() {
+        const payload = {
+            id: selectedPersonaId,
+            avatarEmoji: document.getElementById('pEmoji').value,
+            name: document.getElementById('pName').value,
+            ministry: document.getElementById('pMinistry').value,
+            systemPrompt: document.getElementById('pPrompt').value
+        };
 
-      try {
-        const res = await fetch('/api/admin/personas', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ personas })
-        });
-        if(res.ok) alert('✅ Configuration sauvegardée avec succès !');
-        else alert('❌ Erreur lors de la sauvegarde.');
-      } catch (e) {
-          alert('❌ Erreur réseau.');
-      } finally {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-      }
+        const btn = document.querySelector('.btn-save');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>`;
+        
+        try {
+            const res = await fetch('/api/admin/personas', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if(res.ok) {
+                await load(); // Reload to refresh sidebar
+            }
+        } finally {
+            btn.innerHTML = originalContent;
+        }
+    }
+
+    async function deletePersona(id) {
+        if(!confirm("Êtes-vous sûr de vouloir supprimer cet expert et sa configuration ?")) return;
+        await fetch(`/api/admin/personas/${id}`, { method: 'DELETE' });
+        selectedPersonaId = null;
+        load();
+    }
+
+    async function uploadPermanentKnowledge(id) {
+        const fileInput = document.getElementById('pKnowledgeFile');
+        const file = fileInput.files[0];
+        if(!file) return alert("Veuillez sélectionner un fichier.");
+
+        const btn = document.getElementById('btnUpload');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Indexation...`;
+
+        try {
+            const fd = new FormData(); fd.append('file', file);
+            const res = await fetch(`/api/admin/personas/${id}/knowledge`, { method: 'POST', body: fd });
+            
+            if(res.ok) {
+                await load(); // Refresh list
+                // Stay on current persona view is handled by load() + global var, but selectPersona re-renders
+                selectPersona(id); 
+            } else {
+                alert("Erreur lors de l'indexation");
+            }
+        } catch(e) {
+            alert("Erreur réseau");
+        } finally {
+            if(document.getElementById('btnUpload')) { // Check if view hasn't changed
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-cloud-upload me-2"></i>Indexer Fichier`;
+                fileInput.value = '';
+            }
+        }
+    }
+
+    async function uploadPermanentTextKnowledge(id) {
+        const titleInput = document.getElementById('pKnowledgeTitle');
+        const textInput = document.getElementById('pKnowledgeText');
+        const title = titleInput.value.trim() || "Note_sans_titre";
+        const content = textInput.value.trim();
+        
+        if(!content) return alert("Le contenu de la note ne peut pas être vide.");
+
+        const btn = document.getElementById('btnUploadText');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Indexation...`;
+
+        try {
+            // Création d'un fichier virtuel .txt
+            const blob = new Blob([content], { type: 'text/plain' });
+            const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const file = new File([blob], `${safeTitle}.txt`, { type: 'text/plain' });
+
+            const fd = new FormData(); 
+            fd.append('file', file);
+            
+            const res = await fetch(`/api/admin/personas/${id}/knowledge`, { method: 'POST', body: fd });
+            
+            if(res.ok) {
+                await load();
+                selectPersona(id); // Refresh view
+            } else {
+                alert("Erreur lors de l'ajout de la note");
+            }
+        } catch(e) {
+            alert("Erreur réseau: " + e.message);
+        } finally {
+            if(document.getElementById('btnUploadText')) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
     }
 
     load();
