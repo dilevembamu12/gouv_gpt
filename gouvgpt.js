@@ -181,6 +181,13 @@ const upload = multer({ dest: path.join(__dirname, 'uploads') });
 // ROUTES API (PERSONAS & ROOMS)
 // ==========================================
 
+// Route demandée : Exposer tous les personas (Alias de /api/admin/personas pour plus de clarté)
+app.get('/api/data/personas', async (req, res) => {
+    const data = await readJson(PERSONAS_CONFIG_PATH, DEFAULT_PERSONAS_DATA);
+    // On peut renvoyer directement le tableau si préféré, ou l'objet { personas: [...] }
+    res.json(data);
+});
+
 app.get('/api/admin/personas', async (req, res) => {
     const data = await readJson(PERSONAS_CONFIG_PATH, DEFAULT_PERSONAS_DATA);
     res.json(data);
