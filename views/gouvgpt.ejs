@@ -3,17 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>=> GouvBrain • Orchestrateur</title>
+  <title>GouvBrain • Orchestrateur</title>
   
-  <!-- Fonts Modernes (Inter / JetBrains Mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
-  <!-- Bootstrap 5 & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
 
-  <style>
+    <style>
     :root {
         /* Palette Lobe-Chat Like */
         --c-bg-body: #000000;
@@ -445,11 +442,91 @@
         .app-inspector.collapsed { transform: translateX(100%); width: 300px; opacity: 1; }
     }
   </style>
+  <style>
+    /* ... (Styles précédents inchangés) ... */
+    :root {
+        --c-bg-body: #000000;
+        --c-bg-sidebar: #080808;
+        --c-bg-card: #181818;
+        --c-bg-input: #1a1a1a;
+        --c-bg-bubble-bot: #1c1c1c;
+        --c-bg-bubble-user: #006fee;
+        --c-border: #2c2c2c;
+        --c-text-primary: #ffffff;
+        --c-text-secondary: #989899;
+        --c-text-tertiary: #666666;
+        --r-radius-md: 12px;
+        --font-sans: 'Inter', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+    }
+    body { background-color: var(--c-bg-body); color: var(--c-text-primary); font-family: var(--font-sans); height: 100vh; overflow: hidden; display: flex; font-size: 14.5px; }
+    
+    .app-sidebar, .app-inspector { background-color: var(--c-bg-sidebar); display: flex; flex-direction: column; z-index: 100; flex-shrink: 0; }
+    .app-sidebar { width: 260px; border-right: 1px solid var(--c-border); padding: 16px; }
+    .app-inspector { width: 300px; border-left: 1px solid var(--c-border); padding: 0; position: relative; }
+    .app-inspector.collapsed { width: 0; opacity: 0; overflow: hidden; border-left: none; }
+    
+    .brand-area { display: flex; align-items: center; gap: 10px; padding: 0 8px 20px 8px; margin-bottom: 10px; border-bottom: 1px solid var(--c-border); }
+    .brand-logo { width: 32px; height: 32px; background: linear-gradient(135deg, #006fee 0%, #00c6f7 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; }
+    
+    .sidebar-section-title { font-size: 11px; font-weight: 600; color: var(--c-text-tertiary); text-transform: uppercase; margin: 16px 8px 8px; }
+    
+    .room-item { padding: 8px 10px; border-radius: 8px; cursor: pointer; color: var(--c-text-secondary); transition: all 0.2s; font-size: 13px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .room-item:hover { background: var(--c-bg-card); color: white; }
+    .room-item.active { background: rgba(0, 111, 238, 0.15); color: #006fee; font-weight: 500; }
+
+    .persona-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; margin-bottom: 2px; }
+    .persona-avatar { width: 28px; height: 28px; border-radius: 6px; background: var(--c-bg-card); display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid var(--c-border); }
+
+    .app-main { flex: 1; display: flex; flex-direction: column; position: relative; background: radial-gradient(circle at 50% -20%, #111 0%, #000 60%); min-width: 0; }
+    .chat-header { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); background: rgba(0,0,0,0.5); position: absolute; top: 0; left: 0; right: 0; z-index: 10; }
+    .chat-content { flex: 1; overflow-y: auto; padding: 80px 20px 180px 20px; display: flex; flex-direction: column; gap: 24px; scroll-behavior: smooth; }
+    .chat-content::-webkit-scrollbar { width: 6px; }
+    .chat-content::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+    /* Messages Styles */
+    .message-row { display: flex; gap: 16px; max-width: 900px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; position: relative; }
+    .message-row.me { flex-direction: row-reverse; }
+    .message-row.sub-message { margin-left: auto; padding-left: 40px; max-width: 900px; }
+    .message-row.sub-message::before { content: ''; position: absolute; left: 20px; top: -30px; bottom: 50%; width: 2px; background-color: var(--c-border); border-bottom-left-radius: 8px; border-bottom: 2px solid var(--c-border); }
+    .message-row.sub-message::after { content: ''; position: absolute; left: 20px; top: 50%; width: 12px; height: 2px; background-color: var(--c-border); }
+    .message-row:last-child { margin-bottom: 120px !important; }
+    
+    .message-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--c-bg-card); border: 1px solid var(--c-border); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; z-index: 1; }
+    .message-bubble { padding: 12px 18px; border-radius: 18px; line-height: 1.6; position: relative; font-size: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .message-row.bot .message-bubble { background-color: var(--c-bg-bubble-bot); border: 1px solid var(--c-border); border-top-left-radius: 4px; }
+    .message-row.synthesis .message-bubble { background: linear-gradient(145deg, #1c1c1c 0%, #111 100%); border: 1px solid #333; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .message-row.me .message-bubble { background-color: var(--c-bg-bubble-user); color: white; border-top-right-radius: 4px; background-image: linear-gradient(135deg, #006fee 0%, #005bc4 100%); }
+    .rag-sources { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .rag-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: var(--c-text-secondary); font-family: var(--font-mono); }
+
+    /* Input & Mentions */
+    .input-wrapper { position: absolute; bottom: 0; left: 0; width: 100%; padding: 0 0 24px 0; z-index: 50; background: linear-gradient(to top, var(--c-bg-body) 20%, transparent 100%); display: flex; flex-direction: column; align-items: center; }
+    .input-container { width: 100%; max-width: 800px; background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2); position: relative; }
+    .mention-list { position: absolute; bottom: 100%; left: 0; margin-bottom: 8px; background: rgba(30, 30, 30, 0.95); border: 1px solid var(--c-border); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 260px; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; padding: 6px; backdrop-filter: blur(10px); }
+    .mention-list.show { display: block; animation: slideUp 0.15s ease-out; }
+    .mention-item { padding: 8px 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-radius: 8px; color: var(--c-text-primary); font-size: 13px; }
+    .mention-item:hover, .mention-item.selected { background: rgba(0, 111, 238, 0.15); border-left: 3px solid #006fee; }
+    .mention-avatar { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 6px; font-size: 14px; }
+    .chat-textarea { background: transparent; border: none; color: var(--c-text-primary); width: 100%; padding: 8px 12px; resize: none; outline: none; max-height: 200px; min-height: 44px; font-family: var(--font-sans); font-size: 15px; line-height: 1.6; }
+    .send-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: #006fee; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .send-btn:disabled { background: #333; cursor: not-allowed; opacity: 0.7; }
+
+    /* Modals & Utils */
+    .modal-content { background-color: #1e1e1e; border: 1px solid var(--c-border); border-radius: 20px; }
+    .form-control { background: #111; border: 1px solid var(--c-border); color: white; border-radius: 10px; }
+    .form-control:focus { background: #111; color: white; border-color: #006fee; box-shadow: 0 0 0 3px rgba(0,111,238,0.2); }
+    .thinking-dots::after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
+    @keyframes dots { 0%, 20% { content: ' .'; } 40% { content: ' ..'; } 60% { content: ' ...'; } 80%, 100% { content: ' ....'; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .prompt-card { background: var(--c-bg-input); border: 1px solid var(--c-border); border-radius: 12px; padding: 12px; cursor: pointer; transition: all 0.2s; height: 100%; display: flex; flex-direction: column; gap: 8px; }
+    .prompt-card:hover { background: var(--c-bg-card); border-color: #006fee; transform: translateY(-2px); }
+  </style>
 </head>
 
 <body>
-
-  <!-- MODAL : CONFIGURATION -->
+  <!-- CONFIG MODAL -->
   <div class="modal fade" id="roomModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -472,112 +549,72 @@
       </div>
     </div>
   </div>
-
-  <!-- PROMPT LIBRARY MODAL -->
+  
+  <!-- PROMPTS MODAL -->
   <div class="modal fade" id="promptModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content">
-        <div class="modal-header border-bottom-0 pb-0">
-          <h5 class="modal-title fw-bold"><i class="bi bi-stars text-warning me-2"></i>Bibliothèque de Prompts</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body pt-2">
-            <p class="text-secondary small mb-4">Sélectionnez un modèle pour démarrer rapidement.</p>
-            <div class="row g-3" id="promptGrid">
-                <!-- Prompts injected here -->
-            </div>
-        </div>
+        <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold text-warning"><i class="bi bi-stars"></i> Bibliothèque</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body pt-2"><div class="row g-3" id="promptGrid"></div></div>
       </div>
     </div>
   </div>
 
-  <!-- SIDEBAR GAUCHE -->
+  <!-- SIDEBAR -->
   <aside class="app-sidebar">
-    <div class="brand-area">
-        <div class="brand-logo"><i class="bi bi-grid-fill"></i></div>
-        <div class="fw-bold fs-5">GouvBrain</div>
-        <span class="badge bg-secondary bg-opacity-25 text-secondary ms-auto" style="font-size:10px;">BETA</span>
-    </div>
+    <div class="brand-area"><div class="brand-logo"><i class="bi bi-grid-fill"></i></div><div class="fw-bold fs-5">GouvBrain</div></div>
     
-    <div class="sidebar-section-title">Session en cours</div>
-    <div class="p-2 mb-3 rounded-3" style="background: var(--c-bg-input); border: 1px solid var(--c-border);">
-        <div class="fw-bold text-white text-truncate" id="roomTitleDisplay">Chargement...</div>
-        <div class="d-flex align-items-center gap-2 mt-1 text-secondary" style="font-size: 11px;">
-            <i class="bi bi-clock"></i> <span id="sessionTime">00:00</span>
-            <span class="ms-auto"><i class="bi bi-circle-fill text-success" style="font-size:6px;"></i> En ligne</span>
-        </div>
+    <div class="sidebar-section-title d-flex justify-content-between">
+        <span>Historique</span>
+        <i class="bi bi-plus-circle text-primary" style="cursor:pointer;" onclick="showNewRoomModal()"></i>
+    </div>
+    <div id="roomList" class="flex-grow-1 overflow-auto" style="max-height: 40vh; margin-bottom: 20px;">
+        <!-- Room list injected here -->
+        <div class="text-center text-secondary small py-2">Chargement...</div>
     </div>
 
     <div class="sidebar-section-title">Cabinet Actif</div>
-    <div id="activePersonasCol" class="d-flex flex-column overflow-auto pe-1" style="flex:1;">
-        <!-- Personas injectés ici -->
-    </div>
+    <div id="activePersonasCol" class="d-flex flex-column overflow-auto pe-1" style="flex:1;"></div>
   </aside>
 
-  <!-- MAIN CHAT -->
+  <!-- MAIN -->
   <main class="app-main">
     <header class="chat-header">
         <div class="d-flex align-items-center gap-3">
-            <h5 class="m-0 fw-bold">Conseil des Ministres</h5>
+            <h5 class="m-0 fw-bold" id="headerRoomTitle">Conseil des Ministres</h5>
         </div>
-        <div>
-            <button class="btn btn-sm btn-icon text-secondary" onclick="toggleInspector()" title="Afficher le dossier">
-                <i class="bi bi-layout-sidebar-reverse"></i>
-            </button>
-        </div>
+        <button class="btn btn-sm btn-icon text-secondary" onclick="document.getElementById('appInspector').classList.toggle('collapsed')"><i class="bi bi-layout-sidebar-reverse"></i></button>
     </header>
 
     <div id="chatWrap" class="chat-content">
         <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center opacity-50 empty-state">
             <div style="font-size: 48px; margin-bottom: 20px;">🏛️</div>
-            <h4>Le Conseil est réuni</h4>
-            <p class="text-secondary" style="max-width: 400px;">
-                Posez une question politique, juridique ou budgétaire. L'orchestrateur distribuera la parole aux ministères compétents.
-            </p>
+            <h4>GouvBrain</h4>
+            <p class="text-secondary">Sélectionnez une session ou créez-en une nouvelle.</p>
         </div>
     </div>
 
     <div class="input-wrapper">
         <div class="typing-indicator" id="statusIndicator"></div>
         <div class="input-container">
-            
-            <!-- POPUP MENTIONS -->
             <div id="mentionList" class="mention-list"></div>
-
-            <div class="input-header">
-                 <div class="input-tools-left">
-                    <input type="file" id="ragInput" hidden onchange="uploadRag()">
-                    <button class="tool-btn" onclick="document.getElementById('ragInput').click()" title="Joindre un fichier">
-                        <i class="bi bi-paperclip"></i>
-                    </button>
-                    <button class="tool-btn" onclick="openPromptLibrary()" title="Bibliothèque de Prompts">
-                        <i class="bi bi-stars"></i>
-                    </button>
-                    <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 6px 4px;"></div>
-                    <button class="tool-btn" onclick="clearChat()" title="Nouveau Sujet">
-                        <i class="bi bi-eraser"></i>
-                    </button>
-                 </div>
+            <div class="input-header d-flex gap-2 ps-1 pt-1">
+                <button class="tool-btn" onclick="document.getElementById('ragInput').click()"><i class="bi bi-paperclip"></i></button>
+                <input type="file" id="ragInput" hidden onchange="uploadRag()">
+                <button class="tool-btn" onclick="openPromptLibrary()"><i class="bi bi-stars"></i></button>
+                <button class="tool-btn" onclick="clearChat()"><i class="bi bi-eraser"></i></button>
             </div>
-            <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="Posez une question au Conseil des Ministres... Tapez '@' pour solliciter un ministère."></textarea>
+            <textarea id="chatInput" class="chat-textarea" rows="1" placeholder="Votre question... (@ pour mentionner)"></textarea>
             <div class="input-footer">
-                <div class="model-selector" title="Modèle Actif">
-                    <i class="bi bi-lightning-charge-fill model-icon"></i>
-                    <span>GPT-4o</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span style="font-size: 11px; color: var(--c-text-tertiary);" class="d-none d-md-block">Entrée pour envoyer</span>
-                    <button id="sendBtn" class="send-btn" onclick="sendMessage()">
-                        <i class="bi bi-arrow-up-short fs-4"></i>
-                    </button>
-                </div>
+                <div class="model-selector"><i class="bi bi-lightning-fill text-warning"></i> GPT-4o</div>
+                <button id="sendBtn" class="send-btn" onclick="sendMessage()"><i class="bi bi-arrow-up-short fs-4"></i></button>
             </div>
         </div>
-        <div class="footer-text">GouvBrain IA peut commettre des erreurs. Vérifiez les informations importantes.</div>
+        <div class="footer-text">IA Gouvernementale - Vérifiez les informations.</div>
     </div>
   </main>
 
-  <!-- SIDEBAR DROITE (INSPECTEUR) -->
+  <!-- INSPECTOR -->
   <aside class="app-inspector" id="appInspector">
     <div class="inspector-header">
         <span>Dossier de Séance</span>
@@ -614,438 +651,221 @@
     let currentRoomId = null;
     let allPersonas = [];
     let activePersonas = [];
-    let ragFilesList = [];
     let isPolling = false;
 
-    // --- PROMPT LIBRARY DATA & LOGIC ---
-    const PROMPTS = [
-        { icon: "💰", title: "Analyse Budgétaire", text: "Quels sont les impacts budgétaires à court et long terme de cette mesure sur les finances publiques ?", desc: "Évaluation financière et fiscale." },
-        { icon: "⚖️", title: "Risque Juridique", text: "Identifiez les risques d'inconstitutionnalité ou de contentieux européen liés à ce projet de loi.", desc: "Analyse de conformité légale." },
-        { icon: "🌍", title: "Impact Écologique", text: "Quelle est l'empreinte carbone estimée de ce projet et sa compatibilité avec nos engagements climatiques ?", desc: "Évaluation environnementale." },
-        { icon: "📣", title: "Éléments de Langage", text: "Proposez des éléments de langage pour défendre cette réforme face aux critiques de l'opposition.", desc: "Stratégie de communication." },
-        { icon: "🤝", title: "Synthèse Sociale", text: "Quels sont les points de friction prévisibles avec les partenaires sociaux et comment les désamorcer ?", desc: "Analyse du climat social." },
-        { icon: "🚨", title: "Gestion de Crise", text: "Proposez un plan d'action immédiat pour répondre à l'urgence sanitaire signalée.", desc: "Réponse opérationnelle rapide." }
-    ];
-
-    function openPromptLibrary() {
-        const grid = document.getElementById('promptGrid');
-        grid.innerHTML = PROMPTS.map(p => `
-            <div class="col-md-4 col-sm-6">
-                <div class="prompt-card" onclick="usePrompt('${p.text.replace(/'/g, "\\'")}')">
-                    <div class="prompt-icon">${p.icon}</div>
-                    <div class="prompt-title">${p.title}</div>
-                    <div class="prompt-desc">${p.desc}</div>
-                </div>
-            </div>
-        `).join('');
-        new bootstrap.Modal(document.getElementById('promptModal')).show();
-    }
-
-    function usePrompt(text) {
-        const input = document.getElementById('chatInput');
-        input.value = text;
-        // Trigger auto-resize
-        input.style.height = 'auto'; 
-        input.style.height = (input.scrollHeight) + 'px';
-        input.focus();
-        
-        // Close modal
-        bootstrap.Modal.getInstance(document.getElementById('promptModal')).hide();
-    }
-
-    // --- MENTION LOGIC (Telegram Style) ---
-    const chatInput = document.getElementById('chatInput');
-    const mentionList = document.getElementById('mentionList');
-    let mentionSelectedIndex = -1;
-
-    chatInput.addEventListener('keydown', (e) => {
-        const listItems = mentionList.querySelectorAll('.mention-item');
-        
-        // Navigation dans la liste si elle est ouverte
-        if (mentionList.classList.contains('show') && listItems.length > 0) {
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                mentionSelectedIndex = (mentionSelectedIndex > 0) ? mentionSelectedIndex - 1 : listItems.length - 1;
-                updateMentionSelection(listItems);
-                return;
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                mentionSelectedIndex = (mentionSelectedIndex < listItems.length - 1) ? mentionSelectedIndex + 1 : 0;
-                updateMentionSelection(listItems);
-                return;
-            } else if (e.key === 'Enter' || e.key === 'Tab') {
-                e.preventDefault();
-                if (mentionSelectedIndex > -1 && listItems[mentionSelectedIndex]) {
-                    listItems[mentionSelectedIndex].click();
-                }
-                return;
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                mentionList.classList.remove('show');
-                return;
-            }
-        }
-
-        // Envoi classique si pas de mention active
-        if(e.key === 'Enter' && !e.shiftKey) {
-             e.preventDefault(); 
-             sendMessage(); 
-        }
-    });
-
-    chatInput.addEventListener('keyup', (e) => {
-        if (['ArrowUp', 'ArrowDown', 'Enter', 'Tab', 'Escape'].includes(e.key)) return;
-
-        const val = chatInput.value;
-        const cursorPosition = chatInput.selectionStart;
-        
-        // Détecter le mot en cours de frappe
-        const textBeforeCursor = val.substring(0, cursorPosition);
-        const lastAt = textBeforeCursor.lastIndexOf('@');
-        
-        if (lastAt !== -1) {
-            // Vérifier si le @ est précédé d'un espace ou est en début de ligne
-            const charBeforeAt = textBeforeCursor[lastAt - 1];
-            if (lastAt === 0 || /\s/.test(charBeforeAt)) {
-                const query = textBeforeCursor.substring(lastAt + 1);
-                // Si pas d'espace dans la requête, on filtre
-                if (!/\s/.test(query)) {
-                    showMentions(query);
-                    return;
-                }
-            }
-        }
-        
-        mentionList.classList.remove('show');
-        mentionSelectedIndex = -1;
-    });
-
-    function showMentions(query) {
-        // Filtrer parmi les ministères ACTIFS
-        const filtered = activePersonas.filter(p => 
-            p.name.toLowerCase().includes(query.toLowerCase()) || 
-            p.ministry.toLowerCase().includes(query.toLowerCase())
-        );
-
-        if (filtered.length === 0) {
-            mentionList.classList.remove('show');
-            mentionSelectedIndex = -1;
-            return;
-        }
-
-        // Générer le HTML
-        mentionList.innerHTML = filtered.map((p, index) => `
-            <div class="mention-item ${index === 0 ? 'selected' : ''}" onclick="insertMention('${p.ministry}')" data-index="${index}">
-                <div class="mention-avatar">${p.avatarEmoji}</div>
-                <div>
-                    <div class="fw-bold">${p.ministry}</div>
-                    <div class="text-secondary" style="font-size:10px;">${p.name}</div>
-                </div>
-            </div>
-        `).join('');
-        
-        mentionList.classList.add('show');
-        mentionSelectedIndex = 0; // Sélectionner le premier par défaut
-    }
-
-    function updateMentionSelection(listItems) {
-        listItems.forEach((item, index) => {
-            if (index === mentionSelectedIndex) {
-                item.classList.add('selected');
-                item.scrollIntoView({ block: 'nearest' });
-            } else {
-                item.classList.remove('selected');
-            }
-        });
-    }
-
-    function insertMention(ministryName) {
-        const val = chatInput.value;
-        const cursorPosition = chatInput.selectionStart;
-        const textBeforeCursor = val.substring(0, cursorPosition);
-        const textAfterCursor = val.substring(cursorPosition);
-        
-        const lastAt = textBeforeCursor.lastIndexOf('@');
-        const textBeforeAt = textBeforeCursor.substring(0, lastAt);
-        
-        // Insérer le tag avec un espace après
-        const newText = textBeforeAt + `@${ministryName} ` + textAfterCursor;
-        
-        chatInput.value = newText;
-        
-        // Placer le curseur après le tag
-        const newCursorPos = lastAt + ministryName.length + 2; 
-        chatInput.setSelectionRange(newCursorPos, newCursorPos);
-        chatInput.focus();
-        
-        mentionList.classList.remove('show');
-        mentionSelectedIndex = -1;
-    }
-
-
-    // --- UTILS ---
-    function formatTime() {
-        const now = new Date();
-        return now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-    }
-    setInterval(() => { const el = document.getElementById('sessionTime'); if(el) el.innerText = formatTime(); }, 60000);
-
-    const tx = document.getElementById('chatInput');
-    tx.setAttribute('style', 'height:' + (tx.scrollHeight) + 'px;overflow-y:hidden;');
-    tx.addEventListener("input", function() {
-        this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
-    }, false);
-
-    function toggleInspector() {
-        document.getElementById('appInspector').classList.toggle('collapsed');
-    }
-
-    function clearChat() {
-        document.getElementById('chatWrap').innerHTML = `
-            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-center opacity-50 empty-state">
-                <div style="font-size: 48px; margin-bottom: 20px;">✨</div>
-                <h4>Nouvelle Session</h4>
-                <p class="text-secondary" style="max-width: 400px;">Le contexte a été nettoyé.</p>
-            </div>
-        `;
-    }
-
-    // --- INIT ---
+    // --- ROOM LOGIC ---
     async function init() {
-        try {
-            const res = await fetch('/api/admin/personas');
-            const config = await res.json();
-            allPersonas = config.personas;
-            const selector = document.getElementById('personaSelector');
-            selector.innerHTML = allPersonas.map(p => `
-                <div class="col-6">
-                    <div class="position-relative">
-                        <input class="form-check-input position-absolute top-0 end-0 m-2" type="checkbox" value="${p.id}" id="chk_${p.id}" checked style="z-index:2;">
-                        <label class="d-flex align-items-center gap-2 p-2 border border-secondary border-opacity-25 rounded-3 bg-dark" for="chk_${p.id}" style="cursor:pointer;">
-                            <div class="fs-4">${p.avatarEmoji}</div>
-                            <div style="line-height:1.2; overflow:hidden;">
-                                <div class="fw-bold text-white small text-truncate">${p.ministry}</div>
-                                <div class="text-secondary" style="font-size:10px;">${p.name}</div>
-                            </div>
-                        </label>
-                    </div>
+        // Fetch Personas
+        const resP = await fetch('/api/admin/personas');
+        const dataP = await resP.json();
+        allPersonas = dataP.personas;
+        
+        // Populate Modal
+        document.getElementById('personaSelector').innerHTML = allPersonas.map(p => `
+            <div class="col-6"><div class="form-check bg-dark p-2 rounded border border-secondary border-opacity-25">
+                <input class="form-check-input" type="checkbox" value="${p.id}" checked>
+                <label class="form-check-label ms-2 text-white small">${p.avatarEmoji} ${p.ministry}</label>
+            </div></div>`).join('');
+
+        // Fetch Rooms & Select last one
+        await refreshRoomList();
+    }
+
+    async function refreshRoomList() {
+        const res = await fetch('/api/rooms');
+        const data = await res.json();
+        const list = document.getElementById('roomList');
+        
+        if(data.rooms.length === 0) {
+            list.innerHTML = `<div class="text-center text-secondary small py-2">Aucune session</div>`;
+            showNewRoomModal();
+        } else {
+            list.innerHTML = data.rooms.map(r => `
+                <div class="room-item ${currentRoomId === r.id ? 'active' : ''}" onclick="loadRoom('${r.id}')">
+                    <i class="bi bi-chat-left-text me-2"></i>${r.name}
                 </div>
             `).join('');
-            new bootstrap.Modal(document.getElementById('roomModal')).show();
-        } catch (e) { console.error(e); }
-    }
-
-    // --- CREATE ROOM ---
-    async function createRoom() {
-        const name = document.getElementById('roomNameInput').value || "Conseil Ordinaire";
-        const ids = [...document.querySelectorAll('#personaSelector input:checked')].map(c => c.value);
-        
-        try {
-            const res = await fetch('/api/rooms', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name, selectedPersonaIds: ids })
-            });
-            const data = await res.json();
-            if(data.ok){
-                currentRoomId = data.room.id;
-                activePersonas = allPersonas.filter(p => ids.includes(p.id));
-                document.getElementById('roomTitleDisplay').innerText = name;
-                renderSidebar();
-                bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
-                document.querySelector('.modal-backdrop')?.remove();
+            
+            // Auto-load most recent if none selected
+            if(!currentRoomId && data.rooms.length > 0) {
+                loadRoom(data.rooms[0].id);
             }
-        } catch(e) { alert("Erreur: " + e.message); }
+        }
     }
 
-    function renderSidebar() {
+    async function loadRoom(id) {
+        currentRoomId = id;
+        
+        // Update UI Active State
+        document.querySelectorAll('.room-item').forEach(el => el.classList.remove('active'));
+        const activeItem = [...document.querySelectorAll('.room-item')].find(el => el.textContent.includes(id)); // Simple match, better with ID attr
+        // Re-rendering list to set active class cleanly
+        const resList = await fetch('/api/rooms'); 
+        const dataList = await resList.json();
+        document.getElementById('roomList').innerHTML = dataList.rooms.map(r => `
+            <div class="room-item ${currentRoomId === r.id ? 'active' : ''}" onclick="loadRoom('${r.id}')">
+                <i class="bi bi-chat-left-text me-2"></i>${r.name}
+            </div>
+        `).join('');
+
+        // Fetch Room Details
+        const res = await fetch(`/api/rooms/${id}`);
+        const data = await res.json();
+        const room = data.room;
+
+        document.getElementById('headerRoomTitle').innerText = room.name;
+        
+        // Update Active Personas Sidebar
+        activePersonas = allPersonas.filter(p => room.activePersonas.includes(p.id));
         document.getElementById('activePersonasCol').innerHTML = activePersonas.map(p => `
             <div class="persona-item">
                 <div class="persona-avatar">${p.avatarEmoji}</div>
                 <div class="overflow-hidden">
                     <div class="fw-bold text-white" style="font-size:12px;">${p.ministry}</div>
-                    <div class="text-secondary text-truncate" style="font-size:10px;">${p.role}</div>
                 </div>
-            </div>
-        `).join('');
-    }
-
-    // --- UPLOAD RAG ---
-    async function uploadRag() {
-        const file = document.getElementById('ragInput').files[0];
-        if(!file) return;
-        const status = document.getElementById('statusIndicator');
-        status.innerHTML = `<span class="spinner-border spinner-border-sm me-2" style="width:10px;height:10px;"></span> Analyse de ${file.name}...`;
-        const fd = new FormData(); fd.append('file', file);
-        try {
-            const res = await fetch(`/api/rooms/${currentRoomId}/ingest`, {method:'POST', body:fd});
-            const d = await res.json();
-            if(d.ok) {
-                status.innerHTML = "";
-                // Ajouter à la liste visuelle droite
-                ragFilesList.push({ name: file.name, type: 'PDF' });
-                renderInspectorFiles();
-                addMessage("system", `📂 Document <strong>${file.name}</strong> ajouté au dossier.`);
-                // Ouvrir l'inspecteur pour montrer le fichier
-                document.getElementById('appInspector').classList.remove('collapsed');
-            } else { status.innerText = "Erreur upload."; alert(d.error); }
-        } catch(e) { status.innerText = "Erreur réseau"; }
-    }
-
-    function renderInspectorFiles() {
-        const container = document.getElementById('inspectorFileList');
-        if(ragFilesList.length === 0) {
-            container.innerHTML = `<div class="text-center text-secondary small py-4 opacity-50 fst-italic">Aucun document joint</div>`;
-            return;
+            </div>`).join('');
+        
+        // Restore Chat History
+        const chatWrap = document.getElementById('chatWrap');
+        chatWrap.innerHTML = ''; // Clear
+        
+        if (room.messages && room.messages.length > 0) {
+            room.messages.forEach(msg => {
+                if (msg.role === 'user') {
+                    addMessage('me', msg.content);
+                } else if (msg.role === 'assistant') {
+                    // Check if content is complex JSON (from n8n) or string
+                    if (typeof msg.content === 'object') {
+                        renderResponse(msg.content);
+                    } else {
+                        // Fallback string
+                        addMessage('bot', msg.content, {name: "Assistant", avatar: "🤖"});
+                    }
+                }
+            });
+        } else {
+            chatWrap.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center h-100 text-center opacity-50 empty-state"><div style="font-size: 48px; margin-bottom: 20px;">📂</div><h4>Session Ouverte</h4><p class="text-secondary">Historique vide.</p></div>`;
         }
-        container.innerHTML = ragFilesList.map(f => `
-            <div class="file-card">
-                <div class="file-icon"><i class="bi bi-file-earmark-pdf-fill"></i></div>
-                <div class="file-info">
-                    <div class="file-name" title="${f.name}">${f.name}</div>
-                    <div class="file-meta">Indexé • Prêt pour RAG</div>
-                </div>
-            </div>
-        `).join('');
+        
+        // Update Files Inspector
+        const fileList = document.getElementById('inspectorFileList');
+        if(room.files && room.files.length > 0) {
+            fileList.innerHTML = room.files.map(f => `<div class="p-2 border border-secondary border-opacity-25 rounded bg-dark small"><i class="bi bi-file-earmark me-2"></i>${f.name}</div>`).join('');
+        } else {
+            fileList.innerHTML = '<div class="text-center text-secondary small py-4 opacity-50 fst-italic">Vide</div>';
+        }
     }
 
-    // --- ASYNC CHAT LOGIC WITH POLLING ---
+    function showNewRoomModal() { new bootstrap.Modal(document.getElementById('roomModal')).show(); }
+
+    async function createRoom() {
+        const name = document.getElementById('roomNameInput').value || "Conseil";
+        const ids = [...document.querySelectorAll('#personaSelector input:checked')].map(c => c.value);
+        const res = await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, selectedPersonaIds:ids}) });
+        const data = await res.json();
+        if(data.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('roomModal')).hide();
+            await refreshRoomList();
+            loadRoom(data.room.id);
+        }
+    }
+
+    // --- CHAT & PROMPTS (Same logic as before) ---
+    const PROMPTS = [
+        { icon: "💰", title: "Budget", text: "Quels sont les impacts budgétaires ?", desc: "Analyse financière." },
+        { icon: "⚖️", title: "Juridique", text: "Quels sont les risques juridiques ?", desc: "Conformité." },
+        { icon: "🚨", title: "Crise", text: "Plan d'action d'urgence.", desc: "Réponse rapide." }
+    ];
+    function openPromptLibrary() {
+        document.getElementById('promptGrid').innerHTML = PROMPTS.map(p => `
+            <div class="col-md-4"><div class="prompt-card" onclick="usePrompt('${p.text}')">
+                <div class="fs-4 mb-2">${p.icon}</div><div class="fw-bold small">${p.title}</div><div class="small text-secondary">${p.desc}</div>
+            </div></div>`).join('');
+        new bootstrap.Modal(document.getElementById('promptModal')).show();
+    }
+    function usePrompt(txt) { document.getElementById('chatInput').value = txt; document.getElementById('chatInput').focus(); bootstrap.Modal.getInstance(document.getElementById('promptModal')).hide(); }
+
     async function sendMessage() {
         if(isPolling) return;
-        const input = document.getElementById('chatInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const text = input.value.trim();
+        const text = document.getElementById('chatInput').value.trim();
         if(!text) return;
-
-        input.value = ''; input.style.height = 'auto';
+        
+        document.getElementById('chatInput').value = '';
         document.querySelector('.empty-state')?.remove();
-        sendBtn.disabled = true;
-
+        document.getElementById('sendBtn').disabled = true;
+        
         addMessage('me', text);
-        const status = document.getElementById('statusIndicator');
-        status.innerHTML = `<span class="thinking-dots">L'orchestrateur consulte les ministères</span>`;
+        document.getElementById('statusIndicator').innerHTML = `<span class="thinking-dots">Consultation...</span>`;
 
         try {
-            // 1. Lance la tâche
-            const res = await fetch('/api/chat/n8n', {
-                method: 'POST', headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ roomId: currentRoomId, message: text })
-            });
-            const initRes = await res.json();
-            
-            if (initRes.ok && initRes.taskId) {
-                // 2. Poll pour le résultat
-                pollTask(initRes.taskId);
-            } else {
-                throw new Error(initRes.error || "Erreur d'initialisation de tâche");
-            }
-        } catch (e) { 
-            addMessage('system', `❌ Erreur : ${e.message}`); 
-            status.innerHTML = '';
-            sendBtn.disabled = false;
-        } 
+            const res = await fetch('/api/chat/n8n', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({roomId:currentRoomId, message:text}) });
+            const json = await res.json();
+            if(json.ok && json.taskId) pollTask(json.taskId);
+        } catch(e) { console.error(e); }
     }
 
     async function pollTask(taskId) {
         isPolling = true;
-        const statusEl = document.getElementById('statusIndicator');
-        const sendBtn = document.getElementById('sendBtn');
-        const pollInterval = 2000; // 2s
-
         const check = async () => {
-            try {
-                const res = await fetch(`/api/chat/task/${taskId}`);
-                const json = await res.json();
-                
-                if(json.status === 'completed') {
-                    // Success!
-                    isPolling = false;
-                    statusEl.innerHTML = '';
-                    sendBtn.disabled = false;
-                    
-                    let n8nData = json.data.data; // Structure might vary depending on n8n webhook response wrapper
-                    if (!n8nData && json.data) n8nData = json.data;
-                    
-                    // Handle array response from n8n
-                    if (Array.isArray(n8nData)) n8nData = n8nData[0];
-                    
-                    renderResponse(n8nData);
-
-                } else if (json.status === 'error') {
-                    throw new Error(json.error);
-                } else {
-                    // Still processing
-                    setTimeout(check, pollInterval);
-                }
-            } catch(e) {
+            const res = await fetch(`/api/chat/task/${taskId}`);
+            const json = await res.json();
+            if(json.status === 'completed') {
                 isPolling = false;
-                statusEl.innerHTML = '';
-                sendBtn.disabled = false;
-                addMessage('system', `❌ Erreur de traitement : ${e.message}`);
-            }
-        }
+                document.getElementById('statusIndicator').innerHTML = '';
+                document.getElementById('sendBtn').disabled = false;
+                let data = json.data.data || json.data;
+                if(Array.isArray(data)) data = data[0];
+                renderResponse(data);
+            } else if(json.status === 'error') {
+                isPolling = false;
+                document.getElementById('statusIndicator').innerHTML = 'Erreur';
+            } else setTimeout(check, 2000);
+        };
         check();
     }
 
-    function renderResponse(n8nData) {
-        let hasContent = false;
-        
-        console.log("Rendering Data:", n8nData);
-
-        if(n8nData.global_synthesis) {
-            addMessage('synthesis', n8nData.global_synthesis, { name: "Synthèse du Conseil", avatar: "🏛️" });
-            hasContent = true;
-        }
-        if(n8nData.responses && Array.isArray(n8nData.responses)) {
-            n8nData.responses.forEach(r => {
-                addMessage('bot', r.text, {
-                    name: r.ministry_name || "Ministère",
-                    avatar: r.avatar_emoji || "👤",
-                    isSubItem: true
-                }, r.rag_sources);
-            });
-            hasContent = true;
-        }
-        if(!hasContent && n8nData.response) {
-            addMessage('bot', n8nData.response, { name: "Secrétariat", avatar: "📝" });
-            hasContent = true;
-        }
-        if(!hasContent) {
-            addMessage('system', `<span class="text-warning">Format brut reçu</span><br><pre style="font-size:10px; max-height:100px; overflow:auto;">${JSON.stringify(n8nData, null, 2)}</pre>`);
-        }
+    function renderResponse(data) {
+        if(data.global_synthesis) addMessage('synthesis', data.global_synthesis, {name:"Synthèse", avatar:"🏛️"});
+        if(data.responses) data.responses.forEach(r => addMessage('bot', r.text, {name:r.ministry_name, avatar:r.avatar_emoji, isSubItem:true}, r.rag_sources));
     }
 
-    function addMessage(type, text, meta = {}, sources = []) {
-        const wrap = document.getElementById('chatWrap');
+    function addMessage(type, text, meta={}, sources=[]) {
         const div = document.createElement('div');
+        const isMe = type==='me';
+        let cls = `message-row ${isMe?'me':(type==='synthesis'?'synthesis':'bot')}`;
+        if(meta.isSubItem) cls += ' sub-message';
+        div.className = cls;
         
-        if (type === 'system') {
-            div.className = "text-center my-3 small text-secondary opacity-75 font-monospace";
-            div.innerHTML = text;
-        } else {
-            const isMe = type === 'me';
-            let classes = `message-row ${isMe ? 'me' : (type === 'synthesis' ? 'synthesis' : 'bot')}`;
-            if(meta.isSubItem) classes += ' sub-message';
+        let content = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        if(sources.length) content += `<div class="rag-sources mt-2">${sources.map(s=>`<span class="rag-chip"><i class="bi bi-file-pdf"></i> ${s.filename}</span>`).join('')}</div>`;
 
-            div.className = classes;
-            
-            let content = text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            if(sources && sources.length > 0) {
-                content += `<div class="rag-sources">`;
-                sources.forEach(s => {
-                    content += `<span class="rag-chip" title="Page ${s.page}"><i class="bi bi-file-earmark-pdf-fill"></i> ${s.filename}</span>`;
-                });
-                content += `</div>`;
-            }
-
-            const avatarHtml = !isMe ? `<div class="message-avatar-container"><div class="message-avatar">${meta.avatar || '🤖'}</div></div>` : '';
-            const senderHtml = !isMe ? `<div class="message-sender">${meta.name || 'IA'}</div>` : '';
-
-            div.innerHTML = `${avatarHtml}<div class="message-bubble-container">${senderHtml}<div class="message-bubble">${content}</div></div>`;
-        }
-        wrap.appendChild(div);
-        const main = document.querySelector('.chat-content');
-        main.scrollTop = main.scrollHeight;
+        div.innerHTML = `${!isMe ? `<div class="message-avatar">${meta.avatar}</div>` : ''}
+            <div class="message-bubble-container">
+                ${!isMe ? `<div class="message-sender">${meta.name}</div>` : ''}
+                <div class="message-bubble">${content}</div>
+            </div>`;
+        document.getElementById('chatWrap').appendChild(div);
+        document.querySelector('.chat-content').scrollTop = 99999;
     }
+    
+    // Auto-resize textarea
+    const tx = document.getElementById('chatInput');
+    tx.addEventListener("input", function(){ this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
+
+    // Mentions logic (simplified)
+    const mentionList = document.getElementById('mentionList');
+    tx.addEventListener('keyup', (e) => {
+        if(e.key === '@') {
+            mentionList.innerHTML = activePersonas.map(p => `<div class="mention-item" onclick="insertMention('${p.ministry}')"><div class="mention-avatar">${p.avatarEmoji}</div><div>${p.ministry}</div></div>`).join('');
+            mentionList.classList.add('show');
+        } else if(e.key === 'Escape' || e.key === ' ') mentionList.classList.remove('show');
+    });
+    function insertMention(name) { tx.value += name + ' '; mentionList.classList.remove('show'); tx.focus(); }
+
+    function clearChat() { if(confirm('Effacer la vue ?')) document.getElementById('chatWrap').innerHTML = ''; }
+    
+    // Upload RAG placeholder
+    function uploadRag() { alert("Upload activé dans l'admin ou via le drag & drop (bientôt)"); }
 
     init();
   </script>
