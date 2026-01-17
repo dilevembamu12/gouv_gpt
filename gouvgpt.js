@@ -446,6 +446,7 @@ app.post('/api/gemini/persona', async (req, res) => {
     } catch(e) { res.status(500).json({ok:false}); }
 });
 
+
 // --- INIT ---
 initDataFiles().then(() => {
     app.listen(PORT, () => console.log(`\n🚀 GouvBrain Backend ready on port ${PORT}`));
