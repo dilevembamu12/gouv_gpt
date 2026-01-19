@@ -50,6 +50,9 @@ const DEFAULT_TASKS_DATA = { tasks: [] };
 // --- GESTIONNAIRE DE TÂCHES HYBRIDE ---
 const taskStore = new Map();
 
+/**
+ * Initialise les répertoires et fichiers JSON nécessaires au fonctionnement.
+ */
 async function initDataFiles() {
     [DATA_PATH, UPLOADS_DIR].forEach(d => { 
         if (!fssync.existsSync(d)) {
@@ -69,14 +72,19 @@ async function initDataFiles() {
         }
     }
 
+    // Chargement des tâches persistées au démarrage pour éviter les 404 après restart
     try {
         const savedTasks = await readJson(TASKS_DATA_PATH, DEFAULT_TASKS_DATA);
         if (savedTasks && Array.isArray(savedTasks.tasks)) {
             savedTasks.tasks.forEach(t => taskStore.set(t.id, t));
+            console.log(`[Init] ${taskStore.size} tâches restaurées depuis le cache.`);
         }
     } catch (e) { console.warn("[Init] Erreur chargement tâches:", e.message); }
 }
 
+/**
+ * Met à jour une tâche en mémoire et lance la sauvegarde asynchrone sur disque.
+ */
 async function updateTask(taskId, updateData) {
     const currentTask = taskStore.get(taskId) || { id: taskId, createdAt: new Date().toISOString() };
     const newTask = { ...currentTask, ...updateData, updatedAt: new Date().toISOString() };
@@ -84,8 +92,14 @@ async function updateTask(taskId, updateData) {
     saveTasksToDisk(); 
 }
 
+/**
+ * Récupère une tâche depuis la mémoire.
+ */
 function getTask(taskId) { return taskStore.get(taskId); }
 
+/**
+ * Persiste les tâches de la mémoire vers le fichier JSON (nettoyage après 24h).
+ */
 async function saveTasksToDisk() {
     try {
         const tasksArray = Array.from(taskStore.values());
@@ -97,7 +111,10 @@ async function saveTasksToDisk() {
 
 // --- Helpers JSON ---
 async function readJson(file, defaultVal) {
-    try { return JSON.parse(await fs.readFile(file, 'utf8')); } catch { return defaultVal; }
+    try { 
+        const data = await fs.readFile(file, 'utf8');
+        return JSON.parse(data); 
+    } catch (e) { return defaultVal; }
 }
 async function writeJson(file, data) {
     await fs.writeFile(file, JSON.stringify(data, null, 2), 'utf8');
@@ -138,16 +155,19 @@ const upload = multer({ dest: path.join(__dirname, 'uploads') });
 // ROUTES API (PERSONAS & ROOMS)
 // ==========================================
 
+// Liste tous les personas (format JSON)
 app.get('/api/data/personas', async (req, res) => {
     const data = await readJson(PERSONAS_CONFIG_PATH, DEFAULT_PERSONAS_DATA);
     res.json(data);
 });
 
+// Admin : Liste Personas
 app.get('/api/admin/personas', async (req, res) => {
     const data = await readJson(PERSONAS_CONFIG_PATH, DEFAULT_PERSONAS_DATA);
     res.json(data);
 });
 
+// Admin : Sauvegarder/Mettre à jour Persona
 app.post('/api/admin/personas', async (req, res) => {
     try {
         const persona = req.body;
@@ -166,6 +186,7 @@ app.post('/api/admin/personas', async (req, res) => {
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Admin : Supprimer Persona
 app.delete('/api/admin/personas/:id', async (req, res) => {
     try {
         const config = await readJson(PERSONAS_CONFIG_PATH, DEFAULT_PERSONAS_DATA);
@@ -175,12 +196,14 @@ app.delete('/api/admin/personas/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Liste des Salons
 app.get('/api/rooms', async (req, res) => {
     const data = await readJson(ROOMS_DATA_PATH, DEFAULT_ROOMS_DATA);
     data.rooms.reverse();
     res.json(data);
 });
 
+// Détails d'un Salon
 app.get('/api/rooms/:id', async (req, res) => {
     const data = await readJson(ROOMS_DATA_PATH, DEFAULT_ROOMS_DATA);
     const room = data.rooms.find(r => r.id === req.params.id);
@@ -188,6 +211,7 @@ app.get('/api/rooms/:id', async (req, res) => {
     res.json({ ok: true, room });
 });
 
+// Créer un Salon
 app.post('/api/rooms', async (req, res) => {
     try {
         const { name, selectedPersonaIds } = req.body;
@@ -207,15 +231,14 @@ app.post('/api/rooms', async (req, res) => {
 });
 
 // ==========================================
-// ROUTES INGESTION (Node -> MinIO -> n8n) - AVEC METADATA
+// ROUTES INGESTION (Node -> MinIO -> n8n)
 // ==========================================
 
-// 1. Ingestion de FICHIER
+// 1. Ingestion de FICHIER (PDF/TXT) avec métadonnées
 app.post('/api/admin/personas/:personaId/knowledge/file', upload.single('file'), async (req, res) => {
     try {
         const { personaId } = req.params;
         const file = req.file;
-        // Récupération des métadonnées envoyées par le frontend (stringifié dans FormData)
         let customMeta = {};
         if (req.body.meta) {
             try { customMeta = JSON.parse(req.body.meta); } catch(e) { console.warn("Erreur parsing meta", e); }
@@ -228,7 +251,6 @@ app.post('/api/admin/personas/:personaId/knowledge/file', upload.single('file'),
         await minioClient.putObject(MINIO_BUCKET, objectName, fileStream, file.size, { 'Content-Type': file.mimetype });
         const presignedUrl = await minioClient.presignedGetObject(MINIO_BUCKET, objectName, 24 * 60 * 60);
         
-        // Construction du payload n8n avec les métadonnées enrichies
         const n8nPayload = {
             action: "ingest",
             bucket: MINIO_BUCKET,
@@ -240,17 +262,14 @@ app.post('/api/admin/personas/:personaId/knowledge/file', upload.single('file'),
                 type: "file", 
                 mimeType: file.mimetype, 
                 minio_key: objectName,
-                // Fusion des métadonnées personnalisées (tags, description, etc.)
                 ...customMeta 
             }
         };
 
-        console.log(`[Ingest File] Envoi vers n8n avec Meta:`, JSON.stringify(n8nPayload.metadata, null, 2));
-        
+        console.log(`[Ingest File] Transmission vers n8n...`);
         const n8nRes = await fetch(N8N_QDRANT_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(n8nPayload) });
         if(!n8nRes.ok) throw new Error(`Erreur n8n: ${await n8nRes.text()}`);
 
-        // Mise à jour de la persistance locale
         const config = await readJson(PERSONAS_CONFIG_PATH, DEFAULT_PERSONAS_DATA);
         const p = config.personas.find(p => p.id === personaId);
         if (p) {
@@ -262,7 +281,7 @@ app.post('/api/admin/personas/:personaId/knowledge/file', upload.single('file'),
                 type: 'file', 
                 date: new Date().toISOString(), 
                 minioKey: objectName,
-                meta: customMeta // Sauvegarde locale des métadonnées
+                meta: customMeta
             });
             await writeJson(PERSONAS_CONFIG_PATH, config);
         }
@@ -271,10 +290,10 @@ app.post('/api/admin/personas/:personaId/knowledge/file', upload.single('file'),
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
-// 2. Ingestion de TEXTE
+// 2. Ingestion de TEXTE (Note) avec métadonnées
 app.post('/api/admin/personas/:personaId/knowledge/text', async (req, res) => {
     try {
-        const { personaId, title, content, meta } = req.body; // meta est un objet JSON direct ici
+        const { personaId, title, content, meta } = req.body;
         const filename = `${title.replace(/[^a-z0-9]/gi, '_')}.txt`;
         const objectName = `${personaId}/${Date.now()}_${filename}`;
         
@@ -290,12 +309,9 @@ app.post('/api/admin/personas/:personaId/knowledge/text', async (req, res) => {
                 type: "text", 
                 title: title, 
                 minio_key: objectName,
-                // Fusion des métadonnées
                 ...(meta || {})
             }
         };
-
-        console.log(`[Ingest Text] Envoi vers n8n avec Meta:`, JSON.stringify(n8nPayload.metadata, null, 2));
 
         const n8nRes = await fetch(N8N_QDRANT_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(n8nPayload) });
         if(!n8nRes.ok) throw new Error(`Erreur n8n: ${await n8nRes.text()}`);
@@ -311,7 +327,7 @@ app.post('/api/admin/personas/:personaId/knowledge/text', async (req, res) => {
                 type: 'text', 
                 date: new Date().toISOString(), 
                 minioKey: objectName,
-                meta: meta || {} // Sauvegarde locale des métadonnées
+                meta: meta || {}
             });
             await writeJson(PERSONAS_CONFIG_PATH, config);
         }
@@ -342,7 +358,7 @@ app.delete('/api/admin/personas/:personaId/knowledge/:filename', async (req, res
 
 
 // ==========================================
-// ROUTES CHAT (PERSISTANCE)
+// ROUTES CHAT (ASYNCHRONE AVEC POLLING)
 // ==========================================
 
 app.post('/api/chat/n8n', async (req, res) => {
@@ -368,11 +384,12 @@ app.post('/api/chat/n8n', async (req, res) => {
         const payload = { question: message, room_id: roomId, orchestration_context: { available_experts: activeExperts } };
         
         const taskId = crypto.randomUUID();
+        // Marquer la tâche comme en cours de traitement de façon persistante
         await updateTask(taskId, { status: 'processing', roomId: roomId });
 
         (async () => {
             try {
-                console.log(`[Chat] Envoi vers n8n (${N8N_CHAT_WEBHOOK})...`);
+                console.log(`[Chat] Requête transmise à n8n pour taskId: ${taskId}...`);
                 const n8nRes = await fetch(N8N_CHAT_WEBHOOK, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
                 const txt = await n8nRes.text();
                 
@@ -382,6 +399,7 @@ app.post('/api/chat/n8n', async (req, res) => {
                 try { json = JSON.parse(txt); } catch(e) { throw new Error("Réponse n8n invalide"); }
                 
                 let finalData = {};
+                // Normalisation des formats de réponse n8n (tableau ou objet)
                 if (Array.isArray(json)) {
                     if (json.length > 0 && json[0].ministry_name) finalData = { responses: json };
                     else if (json.length > 0) finalData = json[0];
@@ -390,6 +408,7 @@ app.post('/api/chat/n8n', async (req, res) => {
                     finalData = json;
                 }
                 
+                // Enregistrement de la réponse assistant dans l'historique du salon
                 const currentRoomsData = await readJson(ROOMS_DATA_PATH, DEFAULT_ROOMS_DATA);
                 const currentRoom = currentRoomsData.rooms.find(r => r.id === roomId);
                 if(currentRoom) {
@@ -402,6 +421,7 @@ app.post('/api/chat/n8n', async (req, res) => {
                     await writeJson(ROOMS_DATA_PATH, currentRoomsData);
                 }
 
+                // Finalisation de la tâche pour le polling
                 await updateTask(taskId, { status: 'completed', data: finalData });
 
             } catch(e) { 
@@ -414,9 +434,11 @@ app.post('/api/chat/n8n', async (req, res) => {
     } catch (e) { res.status(500).json({ ok: false, error: e.message }); }
 });
 
+// Route de Polling pour le statut de la tâche
 app.get('/api/chat/task/:taskId', async (req, res) => {
     let task = getTask(req.params.taskId);
     if (!task) {
+        // Tenter une relecture du disque si pas en mémoire
         const tasksData = await readJson(TASKS_DATA_PATH, DEFAULT_TASKS_DATA);
         task = tasksData.tasks.find(t => t.id === req.params.taskId);
     }
@@ -433,6 +455,7 @@ app.get('/api/chat/task/:taskId', async (req, res) => {
     });
 });
 
+// Auto-complétion de profil persona via Gemini
 app.post('/api/gemini/persona', async (req, res) => {
     try {
         const { ministry } = req.body;
@@ -446,10 +469,7 @@ app.post('/api/gemini/persona', async (req, res) => {
     } catch(e) { res.status(500).json({ok:false}); }
 });
 
-
-
-
-// --- INIT ---
+// --- INIT & START ---
 initDataFiles().then(() => {
     app.listen(PORT, () => console.log(`\n🚀 GouvBrain Backend ready on port ${PORT}`));
 });
